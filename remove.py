@@ -23,11 +23,12 @@ def remove():
    # Only remove wanted packages
    wanted_packages = set(open(f"{functions.install_path}/etc/wanted_packages", "r").read().splitlines())
    for package in functions.arguments:
+      if not (package in functions.installed_packages):
+         print(f"{package} is not installed")
+         sys.exit(0)
       if not (package in wanted_packages):
          print(f"{package} was installed as a dependency of another package, it can not be removed sanely")
          sys.exit(1)
-      if not (package in functions.installed_packages):
-         print(f"{package} is not installed")
    to_remove = calculate_removed_dependencies(functions.arguments)
    if not functions.yes_mode:
       print(f"Packages to be removed: {" ".join(to_remove)}")

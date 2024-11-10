@@ -6,7 +6,7 @@ import functions
 
 def install():
    print("Getting dependencies")
-   functions.get_depends(functions.arguments)
+   functions.get_depends(functions.arguments, check_installed=True)
    if len(functions.packages) == 0:
       print("Nothing to do all packages are installed")
       sys.exit()
@@ -25,4 +25,4 @@ def install():
          if package != "base":
             wanted_packages.write(package + "\n")
          else:
-            wanted_packages.write('base-update')
+            wanted_packages.write('base-update\n')

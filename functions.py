@@ -115,14 +115,14 @@ def install_package(package, operation):
    
    if os.path.exists(f'{package}/postinst'):
       postinstalls.append(package)
-      os.system(f'cp {package}/postinst /tmp/{package}-postinst')
+      subprocess.run(f'cp {package}/postinst /tmp/{package}-postinst', shell=True)
    if package != "base":
       open(f'{install_path}/etc/installed_package', 'a').write(package + "\n")
    else:
       open(f'{install_path}/etc/installed_package', 'a').write("base-update\n")
    print("Removing Cache")
-   os.system(f'rm -rf {package}')
-   os.system(f'rm -f {package}.tar.xz')
+   subprocess.run(f'rm -rf {package}', shell=True)
+   subprocess.run(f'rm -f {package}.tar.xz', shell=True)
 
 def install_packages(packages, operation):
    for package in packages:
@@ -136,14 +136,17 @@ def check_if_packages_exist(packages):
          print(f'{package} was not found, exiting')
          sys.exit(1)
 
-def check_if_package_installed(package):
+def check_if_package_installed(package, check):
+   if not check:
+      return False
    return package in installed_packages
 
-def get_depends(temp_packages):
+def get_depends(temp_packages, check_installed):
    if len(temp_packages) == 0:
       return packages
    for package in temp_packages:
-      if not (package in packages_set or check_if_package_installed(package)):
+      # the check_installed is to avoid mutliple functions or ifs, it just makes check_if_package_installed return false if it is false.
+      if not (package in packages_set or check_if_package_installed(package, check_installed)):
          packages.append(package)
          packages_set.add(package)
          try:
@@ -155,7 +158,7 @@ def get_depends(temp_packages):
             continue
          # Validate then recurse
          check_if_packages_exist(depends)
-         get_depends(depends)
+         get_depends(depends, check_installed)
    return packages
 
 
@@ -164,11 +167,12 @@ def recalculate_system_depends():
    # check to see if anything currently installed is no longer avaliable
    for package in installed_packages:
       if not (package in available_packages):
+         print(f"{package} no longer exists")
          remove.append(package)
          subprocess.run(f'sed -i \'/{package}/d\' {install_path}/etc/wanted_packages', shell=True)
    # this isn't global because sync doesn't create this file
    wanted_packages = set(open(f"{install_path}/etc/wanted_packages", "r").read().splitlines())
-   depends_of_wanted_packages = get_depends(wanted_packages)
+   depends_of_wanted_packages = get_depends(wanted_packages, check_installed=False)
 
    install = [pkg for pkg in depends_of_wanted_packages if pkg not in installed_packages]
    remove += [pkg for pkg in installed_packages if pkg not in depends_of_wanted_packages]
@@ -182,17 +186,17 @@ def remove_package(package):
    except FileNotFoundError:
       print(f"File list for {package} not found, skipping removal")
       return
-
+   print(f"Removing {package}")
    for file in files:
       # os/subprocesses remove function will crash the system if it's removing something that is currently in use
-      subprocess.run(f"rm -f {file}", shell=True)
+      subprocess.run(f"rm -f {install_path}/{file}", shell=True)
    # Sed's are easier to understand
    # it's removed from wanted in remove.py
    subprocess.run(f"sed -i '/{package}/d' {install_path}/etc/installed_package" , shell=True)
 
-def remove_packages(packages, operation):
+def remove_packages(packages):
    for package in packages:
-      remove_package(package, operation)
+      remove_package(package)
 
 
 

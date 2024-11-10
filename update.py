@@ -32,14 +32,17 @@ def update():
    if not functions.yes_mode:
       print(f"Packages to be updated: {" ".join(updates)}")
       if len(install) > 0:
-         print(f'Packages to be installed: {" ".join(updates)}')
+         print(f'Packages to be installed: {" ".join(install)}')
       if len(remove) > 0:
          print(f'Packages to be REMOVED: {" ".join(remove)}')
-      confirmation=input(f"{len(updates)} packages are queued to install, would you like to continue? [Y/n] ")
+      confirmation=input(f"Would you like to continue? [Y/n] ")
       if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
          print("Aborting")
          sys.exit(0)
-   functions.install_packages(install, "install")
+   if len(install) > 0:
+    functions.install_packages(install, "install")
    functions.install_packages(updates, "other")
-   functions.remove_packages(remove)
+   if len(remove) > 0:
+    functions.remove_packages(remove)
+   subprocess.run(f"cp {functions.cache_dir}/sha256 {functions.cache_dir}/current", shell=True)
    
