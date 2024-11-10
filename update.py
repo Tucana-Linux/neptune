@@ -22,7 +22,7 @@ def check_for_updates():
 
 def update():
    updates = check_for_updates()
-   recalculated_depends = functions.recalculate_system_depends
+   recalculated_depends = functions.recalculate_system_depends()
    install = recalculated_depends[0]
    remove = recalculated_depends[1]
    
@@ -41,5 +41,5 @@ def update():
          sys.exit(0)
    functions.install_packages(install, "install")
    functions.install_packages(updates, "other")
-   #functions.remove_packages(remove)
+   functions.remove_packages(remove)
    

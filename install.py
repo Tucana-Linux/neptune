@@ -24,3 +24,5 @@ def install():
          # you cannot upgrade base
          if package != "base":
             wanted_packages.write(package + "\n")
+         else:
+            wanted_packages.write('base-update')

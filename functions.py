@@ -116,8 +116,10 @@ def install_package(package, operation):
    if os.path.exists(f'{package}/postinst'):
       postinstalls.append(package)
       os.system(f'cp {package}/postinst /tmp/{package}-postinst')
-   
-   open(f'{install_path}/etc/installed_package', 'a').write(package + "\n")
+   if package != "base":
+      open(f'{install_path}/etc/installed_package', 'a').write(package + "\n")
+   else:
+      open(f'{install_path}/etc/installed_package', 'a').write("base-update\n")
    print("Removing Cache")
    os.system(f'rm -rf {package}')
    os.system(f'rm -f {package}.tar.xz')
@@ -154,11 +156,11 @@ def get_depends(temp_packages):
          # Validate then recurse
          check_if_packages_exist(depends)
          get_depends(depends)
+   return packages
 
 
 def recalculate_system_depends():
    remove = []
-   install = []
    # check to see if anything currently installed is no longer avaliable
    for package in installed_packages:
       if not (package in available_packages):
@@ -169,7 +171,7 @@ def recalculate_system_depends():
    depends_of_wanted_packages = get_depends(wanted_packages)
 
    install = [pkg for pkg in depends_of_wanted_packages if pkg not in installed_packages]
-   remove = [pkg for pkg in installed_packages if pkg not in depends_of_wanted_packages]
+   remove += [pkg for pkg in installed_packages if pkg not in depends_of_wanted_packages]
    return [install, remove]
 
 def remove_package(package):
