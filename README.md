@@ -2,8 +2,8 @@
 **A fast lightweight package manager written in Python.**
 
 
-## BETA
-This is currently in Beta, Tucana's main package manager is still going to be mercury until the next stable release. 
+## Alpha
+This is currently in Alpha, Tucana's main package manager is still going to be mercury until the next stable release. 
 
 ## Features
 Near-Instant dependency resolution (compared to the multiple seconds on mercury)
