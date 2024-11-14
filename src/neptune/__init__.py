@@ -1,10 +1,10 @@
 #!/bin/python3
-from functions import *
-from install import install
-from reinstall import reinstall
-from remove import remove
-from sync import sync
-from update import update
+from neptune.functions import * 
+from neptune.install import install
+from neptune.reinstall import reinstall
+from neptune.remove import remove
+from neptune.sync import sync
+from neptune.update import update
 
 def parse_arguments():
   valid_cli_arguments = ["--y", "--no-depend"]

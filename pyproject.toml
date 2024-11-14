@@ -20,4 +20,4 @@ classifiers = [
 Homepage = "https://github.com/Tucana-Linux/neptune"
 Issues = "https://github.com/Tucana-Linux/neptune/issues"
 [project.scripts]
-cli-name = "neptune:main"
+neptune = "neptune:main"

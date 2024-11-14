@@ -3,7 +3,7 @@ import sys
 import os
 import requests
 
-import functions
+from neptune import functions
 '''
 Update Block
 '''

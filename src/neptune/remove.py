@@ -2,7 +2,7 @@ import subprocess
 import sys
 import os
 
-import functions
+from neptune import functions
 
 def calculate_removed_dependencies(packages_to_remove):
    future_wanted_packages = set(open(f"{functions.install_path}/etc/wanted_packages", "r").read().splitlines())

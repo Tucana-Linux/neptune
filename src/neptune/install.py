@@ -2,7 +2,7 @@ import subprocess
 import sys
 import os
 import requests
-import functions
+from neptune import functions
 
 def install():
    print("Getting dependencies")
