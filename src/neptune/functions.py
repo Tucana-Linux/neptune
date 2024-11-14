@@ -9,8 +9,8 @@ if os.geteuid() != 0:
    sys.exit()
 
 # Should be moved to the config file
-repo = "http://192.168.1.231:80"
-install_path = "/mnt"
+repo = "http://192.168.1.143:88"
+install_path = "/"
 stream_chunk_size=8192
 
 

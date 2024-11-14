@@ -46,7 +46,7 @@ def run_operation():
          remove()
       case "sync":
          sync()
-
-check_online()
-parse_arguments()
-run_operation()
+def main():
+   check_online()
+   parse_arguments()
+   run_operation()

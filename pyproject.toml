@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+[project]
+dependencies=["requests"]
+name = "neptune"
+version = "0.0.1"
+authors = [
+  { name="Rahul Chandra", email="rahul@tucanalinux.org" },
+]
+description = "A fast lightweight package manager written in Python"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "License :: OSI Approved :: GPLv3 License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/Tucana-Linux/neptune"
+Issues = "https://github.com/Tucana-Linux/neptune/issues"
+[project.scripts]
+cli-name = "neptune:main"
