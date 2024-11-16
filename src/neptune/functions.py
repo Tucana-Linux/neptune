@@ -89,7 +89,7 @@ def copy_files(package):
 def update_files(package):
    # needed for updates & reinstalls
    os.chdir(f'{cache_dir}/{package}')
-      # Find all the directories and create them if they don't existo
+      # Find all the directories and create them if they don't exist
    for root, dirs, files in os.walk(f'.'):
       for dir_name in dirs:
          folder_path = os.path.join(install_path, os.path.join(root, dir_name).lstrip('.'))
