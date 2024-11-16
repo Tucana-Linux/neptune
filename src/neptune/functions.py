@@ -77,6 +77,14 @@ def download_package(package):
 
 def copy_files(package):
    subprocess.run(f'cp -rp {package}/* {install_path}', shell=True)
+   subprocess.run(f'rm -f {install_path}/depends')
+   subprocess.run(f'rm -f {install_path}/depend')
+   subprocess.run(f'rm -f {install_path}/make-depend')
+   subprocess.run(f'rm -f {install_path}/make-depends')
+   subprocess.run(f'rm -f {install_path}/postinst')
+   subprocess.run(f'rm -f {install_path}/preinst')
+   subprocess.run(f'rm -f {install_path}/prerm')
+   subprocess.run(f'rm -f {install_path}/preupdate')
 
 def update_files(package):
    # needed for updates & reinstalls
