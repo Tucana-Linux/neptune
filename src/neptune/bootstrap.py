@@ -1,3 +1,4 @@
+from pathlib import Path
 import subprocess
 import sys
 import os
@@ -45,13 +46,29 @@ def copy_files(package):
    for i in ['depends', 'depend', 'make-depend', 'make-depends', 'postinst', 'preinst', 'prerm', 'preupdate']:
       check_for_and_delete(f'{path}/{i}')
 
+def download_link(link, output_path):
+   try:
+      download = requests.get(link, stream=True)
+      with open(output_path, 'wb') as file:
+         # use streams as these can get big
+         for chunk in download.iter_content(chunk_size=8192):
+            file.write(chunk)
+   except requests.RequestException as e:
+      print(f"Failed to download {link}, you have likely lost internet, error: {e}")
+      subprocess.run(f"rm -f {output_path}")
+      sys.exit(1)
+
+def download_package(package):
+   print(f"Downloading {package}")
+   download_link(f'{functions.repo}/packages/{package}.tar.xz', f'{cache_dir}/{package}.tar.xz')
+
 def install_package(package):
    if not os.path.exists(cache_dir):
       os.makedirs(cache_dir)
    os.chdir(cache_dir)
-   
-   functions.download_package(package)
 
+   download_package(package)
+   
    print(f"Extracting {package}")
    subprocess.run(f'tar -xpf {package}.tar.xz', shell=True)
 
@@ -74,7 +91,7 @@ def install_packages(packages):
       install_package(package)
 
 def create_inital_files():
-   os.makedirs({cache_dir})
+   os.makedirs(cache_dir)
    os.makedirs(f'{cache_dir}/file-lists')
    os.makedirs(f'{cache_dir}/depend')
    try: 
@@ -83,13 +100,16 @@ def create_inital_files():
    except:
       print("Error retreiving files from the repository is it online?")
       sys.exit(1)
-   subprocess.run(f'cp {cache_dir}/sha256 {cache_dir}/current')
+   subprocess.run(f'cp {cache_dir}/current {cache_dir}/sha256', shell=True)
 
 
 def bootstrap():
    # This is a complete reimplmentation, neptune main never gets called here.
    functions.check_online()
    parse_arguments()
+   if not os.listdir(path) == []:
+      print("This directory is not empty!")
+      sys.exit(1)
    global cache_dir
    cache_dir = f'{path}/var/cache/mercury'
    print("Syncing")
@@ -105,5 +125,5 @@ def bootstrap():
          print("Aborting")
          sys.exit(0)
    install_packages(packages)
-
+   open(f'{path}/etc/wanted_package', 'a').write("base-update\n")
 
