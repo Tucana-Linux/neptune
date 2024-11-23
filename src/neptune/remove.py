@@ -12,10 +12,6 @@ def calculate_removed_dependencies(packages_to_remove):
    remove = [pkg for pkg in functions.installed_packages if pkg not in depends_of_wanted_packages]
    return remove
     
-   
-      
-   
-
 def remove():
    if len(functions.arguments) == 0:
       print("Nothing to do")

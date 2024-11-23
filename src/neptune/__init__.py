@@ -47,6 +47,7 @@ def run_operation():
       case "sync":
          sync()
 def main():
+   # also initalizes all the functions variables
    check_online()
    parse_arguments()
    run_operation()

@@ -21,3 +21,4 @@ Homepage = "https://github.com/Tucana-Linux/neptune"
 Issues = "https://github.com/Tucana-Linux/neptune/issues"
 [project.scripts]
 neptune = "neptune:main"
+neptune-bootstrap = "neptune.bootstrap:bootstrap"

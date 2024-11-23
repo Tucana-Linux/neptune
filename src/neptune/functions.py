@@ -62,29 +62,31 @@ def postinst():
       print(f"Running {package} post-install")
       subprocess.run(f"bash /tmp/{package}-postinst", shell=True)
       subprocess.run(f'rm -f /tmp/{package}-postinst', shell=True)
-
-def download_package(package):
-   print(f"Downloading {package}")
+def download_link(link, output_path):
    try:
-      download = requests.get(f'{repo}/packages/{package}.tar.xz', stream=True)
-      with open(f'{package}.tar.xz', 'wb') as file:
+      download = requests.get(link, stream=True)
+      with open(output_path, 'wb') as file:
          # use streams as these can get big
          for chunk in download.iter_content(chunk_size=stream_chunk_size):
             file.write(chunk)
    except requests.RequestException as e:
-      print(f"Failed to download {package}, you have likely lost internet, error: {e}")
-      subprocess.run(f"rm -f {package}.tar.xz")
+      print(f"Failed to download {link}, you have likely lost internet, error: {e}")
+      subprocess.run(f"rm -f {output_path}")
+      sys.exit(1)
+
+def download_package(package):
+   print(f"Downloading {package}")
+   download_link(f'{repo}/packages/{package}.tar.xz', f'{cache_dir}/{package}.tar.xz')
+   
+
+def check_for_and_delete(path_to_delete):
+   if os.path.exists(path_to_delete):
+      subprocess.run(f'rm -f {path_to_delete}/', shell=True)
 
 def copy_files(package):
    subprocess.run(f'cp -rp {package}/* {install_path}', shell=True)
-   subprocess.run(f'rm -f {install_path}/depends')
-   subprocess.run(f'rm -f {install_path}/depend')
-   subprocess.run(f'rm -f {install_path}/make-depend')
-   subprocess.run(f'rm -f {install_path}/make-depends')
-   subprocess.run(f'rm -f {install_path}/postinst')
-   subprocess.run(f'rm -f {install_path}/preinst')
-   subprocess.run(f'rm -f {install_path}/prerm')
-   subprocess.run(f'rm -f {install_path}/preupdate')
+   for i in ['depends', 'depend', 'make-depend', 'make-depends', 'postinst', 'preinst', 'prerm', 'preupdate']:
+      check_for_and_delete(f'{install_path}/{i}')
 
 def update_files(package):
    # needed for updates & reinstalls
@@ -197,7 +199,7 @@ def remove_package(package):
    print(f"Removing {package}")
    for file in files:
       # os/subprocesses remove function will crash the system if it's removing something that is currently in use
-      subprocess.run(f"rm -f {install_path}/{file}", shell=True)
+      check_for_and_delete(f'{install_path}/{file}', shell=True)
    # Sed's are easier to understand
    # it's removed from wanted in remove.py
    subprocess.run(f"sed -i '/{package}/d' {install_path}/etc/installed_package" , shell=True)

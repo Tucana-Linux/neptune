@@ -6,16 +6,13 @@ from neptune import functions
 def sync():
     os.chdir(f'{functions.cache_dir}/depend')
     print("Getting Available Packages")
-    available_packages=requests.get(f"{functions.repo}/available-packages/packages")
-    open(f'{functions.cache_dir}/available-packages', 'wb').write(available_packages.content)
+    functions.download_link(f"{functions.repo}/available-packages/packages", f'{functions.cache_dir}/available-packages')
 
     print("Getting dependency files")
-    depends=requests.get(f"{functions.repo}/available-packages/packages")
-    open(f'{functions.cache_dir}/depend/depends.tar.xz', 'wb').write(depends.content)
-    subprocess.run('tar -xpf depends.tar.xz', shell=True)
+    functions.download_link(f"{functions.repo}/depend/depends.tar.xz", f'{functions.cache_dir}/depend/depends.tar.xz')
+    output=subprocess.run('tar -xvpf depends.tar.xz', shell=True)
 
     print("Getting meta info")
-    sha256=requests.get(f"{functions.repo}/available-packages/packages")
-    open(f'{functions.cache_dir}/sha256', 'wb').write(sha256.content)
+    functions.download_link(f"{functions.repo}/available-packages/sha256", f'{functions.cache_dir}/sha256')
 
 
