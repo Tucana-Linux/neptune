@@ -10,7 +10,7 @@ def sync():
 
     print("Getting dependency files")
     functions.download_link(f"{functions.repo}/depend/depends.tar.xz", f'{functions.cache_dir}/depend/depends.tar.xz')
-    output=subprocess.run('tar -xvpf depends.tar.xz', shell=True)
+    subprocess.run('tar -xvpf depends.tar.xz', shell=True)
 
     print("Getting meta info")
     functions.download_link(f"{functions.repo}/available-packages/sha256", f'{functions.cache_dir}/sha256')
