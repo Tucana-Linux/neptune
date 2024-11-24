@@ -3,15 +3,20 @@ import subprocess
 import sys
 import os
 import requests
+import yaml
 
 if os.geteuid() != 0:
    print("This package manager must be run as root")
    sys.exit()
 
 # Should be moved to the config file
-repo = "http://192.168.1.143:88"
-install_path = "/"
-stream_chunk_size=8192
+with open('/etc/neptune/config.yaml', 'r') as config_file:
+   config= yaml.safe_load(config_file)
+repo = config['repositories'][0]
+install_path = config['system-settings']['install_path']
+yes_mode = config['system-settings']['yes_mode_by_default']
+stream_chunk_size = config['system-settings']['stream_chunk_size']
+
 
 
 # Global vars
@@ -32,7 +37,6 @@ except FileNotFoundError:
 
 
 # Argument stuff
-yes_mode = False
 no_depend_mode = False
 arguments = list(sys.argv)
 arguments.pop(0)
