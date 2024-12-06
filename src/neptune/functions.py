@@ -95,16 +95,27 @@ def copy_files(package):
 def update_files(package):
    # needed for updates & reinstalls
    os.chdir(f'{cache_dir}/{package}')
+   
       # Find all the directories and create them if they don't exist
    for root, dirs, files in os.walk(f'.'):
       for dir_name in dirs:
          folder_path = os.path.join(install_path, os.path.join(root, dir_name).lstrip('.'))
          os.makedirs(folder_path, exist_ok=True)
+      backup = []
       for file in files:
          if file in ('postinst', 'depends'):
             continue
+         if file == "backup":
+            try:
+               with open('backup', 'r') as backup_file:
+                  backup = [line.rstrip() for line in backup_file]
+            except Exception as e:
+               print(f"Error reading from backup file, aborting update for {package}")
+               return
+
          file_path = os.path.join(install_path, os.path.join(root, file).lstrip('.'))
-         subprocess.run(f'mv {os.path.join(root, file)} {file_path}', shell=True)
+         if file_path not in backup:
+            subprocess.run(f'mv {os.path.join(root, file)} {file_path}', shell=True)
    os.chdir(cache_dir)
 
 def install_package(package, operation):
