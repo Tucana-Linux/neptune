@@ -1,7 +1,7 @@
 #!/bin/bash
 REPO="http://192.168.1.143:88"
-TEMP_DIR="./temp"
-LOG_DIR="./temp/logs"
+TEMP_DIR="$PWD/temp"
+LOG_DIR="$TEMP_DIR/logs"
 REPO_DIR="$TEMP_DIR/repo"
 CHROOT="$TEMP_DIR/chroot"
 RED='\033[0;31m' 
@@ -62,6 +62,23 @@ function chroot_setup() {
 
 function setup() {
   mkdir -p $REPO_DIR/{packages,depends,available-packages}
+  python3 -m build --wheel --skip-dependency-check
+  if ! python3 -m installer --destdir=$CHROOT  dist/*.whl; then
+    echo "SETUP FAILED!"
+    exit 1
+  fi
+  mkdir -p $CHROOT/etc/neptune
+  cat > $CHROOT/etc/neptune/config.yaml << "EOF"
+repositories:
+  - "http://127.0.0.1:99"
+
+system-settings:
+  install_path: "/"
+  yes_mode_by_default: false
+  stream_chunk_size: 8192  
+EOF
+  cd $REPO_DIR
+  screen -dmS repo python3 http.server 99
 }
 
 function make_mock_package() {
