@@ -499,3 +499,4 @@ function run_tests() {
   run_test remove_test "Neptune Remove"
   run_test update_test "Neptune Update"
 }
+run_tests
