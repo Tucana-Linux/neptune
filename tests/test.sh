@@ -116,7 +116,7 @@ EOF
 
   cd $REPO_DIR/packages || exit
   ls | sed 's/.tar.xz//g' > ../available-packages/packages
-  sha256sum * ../available-packages/sha256
+  sha256sum * > ../available-packages/sha256
   cd - || exit
 }
 
