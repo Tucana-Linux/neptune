@@ -393,7 +393,7 @@ function update_test() {
   make_mock_package "libupdate" "" "" ""
   make_mock_package "libupdatenew" "" "" ""
 
-  chroot $CHROOT /bin/bash -c "neptune install update-test-root"
+  chroot $CHROOT /bin/bash -c "neptune install --y update-test-root"
   if [[ $? != 0 ]]; then
     echo "Test failed: Could not install package"
     return 1
@@ -404,7 +404,7 @@ function update_test() {
   CONFIG_HASH=$(sha256sum $CHROOT/test/update-test-root/config.yaml)
   FILE_HASH=$(sha256sum $CHROOT/test/update-test-root/update-test-root)
   chroot $CHROOT /bin/bash -c "neptune sync"
-  chroot $CHROOT /bin/bash -c "neptune update"
+  chroot $CHROOT /bin/bash -c "neptune update --y"
   if [[ $? != 0 ]]; then
     echo "Test failed: neptune update exited with non-zero code"
     return 1
