@@ -1,5 +1,6 @@
 #!/bin/bash
 REPO="http://192.168.1.143:88"
+# DO NOT CHANGE
 TEMP_DIR="$PWD/temp"
 LOG_DIR="$TEMP_DIR/logs"
 REPO_DIR="$TEMP_DIR/repo"
@@ -7,6 +8,7 @@ CHROOT="$TEMP_DIR/chroot"
 RED='\033[0;31m' 
 GREEN='\033[0;32m' 
 NC='\033[0m'
+sudo mercury-install yq python-build python-installer
 mkdir -p "$TEMP_DIR $REPO_DIR $CHROOT $LOG_DIR"
 # Universal Function
 function chroot_setup() {
@@ -57,11 +59,13 @@ function chroot_setup() {
 
   # TODO Change to /var/lib/neptune once neptune is finalized Rahul Chandra <rahul@tucanalinux.org>
   mkdir -p $CHROOT/var/cache/mercury/file-lists
-  chroot $CHROOT /bin/bash -c "mercury-install yq python-urllib3 python-requests pyyaml"
+  chroot $CHROOT /bin/bash -c "mercury-install python-urllib3 python-requests pyyaml"
 }
 
 function setup() {
   mkdir -p $REPO_DIR/{packages,depends,available-packages}
+  cd $TEMP_DIR
+  cd ..
   python3 -m build --wheel --skip-dependency-check
   if ! python3 -m installer --destdir=$CHROOT  dist/*.whl; then
     echo "SETUP FAILED!"
@@ -78,7 +82,8 @@ system-settings:
   stream_chunk_size: 8192  
 EOF
   cd $REPO_DIR
-  screen -dmS repo python3 http.server 99
+  screen -dmS repo python3 -m http.server 99
+  cd -
 }
 
 function make_mock_package() {
@@ -476,13 +481,14 @@ function remove_test() {
 function run_test() {
   local test_function=$1
   local test_name=$2
+  cd $LOG_DIR
   $test_function >> "$test_name.log" 2>&1
   p_or_f "$test_name" "$?"
 }
 
 function run_tests() {
-  setup
   chroot_setup
+  setup
   run_test sync_test "Neptune Sync"
   run_test config_test "Neptune Config Check"
   run_test arguments_test "Neptune Arugments Check"
