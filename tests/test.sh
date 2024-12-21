@@ -173,10 +173,11 @@ function config_test() {
   # Test: Modify yes_mode_by_default
   # This test is repeated during arguments
   echo "Testing yes_mode_by_default..."
-  yq eval ".yes_mode_by_default = false" -i $config_path
-  chroot $CHROOT /bin/bash -c "neptune install test-package" >/dev/null 2>&1
-  if [[ $? -eq 0 ]]; then
-    echo "Neptune install should not proceed without --y when yes_mode_by_default is false"
+  yq eval ".yes_mode_by_default = true" -i $config_path
+  chroot $CHROOT /bin/bash -c "neptune install test-package" >/dev/null 2>&1 &
+  sleep 5
+  if [[ ! -f $CHROOT/tests/test-package/test-package ]]; then
+    echo "yes_mode_by_default FAILED"
     cp "${config_path}.bak" $config_path
     return 1
   fi
