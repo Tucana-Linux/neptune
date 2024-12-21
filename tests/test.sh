@@ -9,7 +9,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m' 
 NC='\033[0m'
 sudo mercury-install yq python-build python-installer
-mkdir -p "$TEMP_DIR $REPO_DIR $CHROOT $LOG_DIR"
+mkdir -p $TEMP_DIR $REPO_DIR $CHROOT $LOG_DIR
 # Universal Function
 function chroot_setup() {
     # Using mercury for now, later it will use the system version of neptune-bootstrap
