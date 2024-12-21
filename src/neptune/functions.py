@@ -8,14 +8,21 @@ import yaml
 if os.geteuid() != 0:
    print("This package manager must be run as root")
    sys.exit()
-
-# Should be moved to the config file
-with open('/etc/neptune/config.yaml', 'r') as config_file:
-   config= yaml.safe_load(config_file)
-repo = config['repositories'][0]
-install_path = config['system-settings']['install_path']
-yes_mode = config['system-settings']['yes_mode_by_default']
-stream_chunk_size = config['system-settings']['stream_chunk_size']
+try:
+   with open('/etc/neptune/config.yaml', 'r') as config_file:
+      try:
+         config= yaml.safe_load(config_file)
+      except yaml.YAMLError as e:
+         print(f"Error parsing yaml syntax {e}")
+except Exception as e:
+   print(f"An unexpected error occured {e}")
+try:
+   repo = config['repositories'][0]
+   install_path = config['system-settings']['install_path']
+   yes_mode = config['system-settings']['yes_mode_by_default']
+   stream_chunk_size = config['system-settings']['stream_chunk_size']
+except KeyError as e:
+   print(f"An unexpected value was found in {e}")
 
 
 

@@ -2,9 +2,9 @@
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 [project]
-dependencies=["requests"]
+dependencies=["requests", "PyYAML"]
 name = "neptune"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   { name="Rahul Chandra", email="rahul@tucanalinux.org" },
 ]
