@@ -112,7 +112,7 @@ EOF
 
   tar -cvzpf "$pkgname".tar.xz "$pkgname"
   rm -rf "$pkgname"
-  mv "$pkgname" $REPO_DIR/packages/
+  mv "$pkgname".tar.xz $REPO_DIR/packages/
 
   cd $REPO_DIR/packages || exit
   ls | sed 's/.tar.xz//g' > ../available-packages/packages
