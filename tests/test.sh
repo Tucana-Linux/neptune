@@ -243,6 +243,8 @@ function arguments_test() {
 
 function sync_test() {
   echo "Running sync test"
+  # need to do this to init the repo
+  make_mock_package "sync-test" "" "" ""
 
   chroot $CHROOT /bin/bash -c "neptune sync"
   local result=$?
