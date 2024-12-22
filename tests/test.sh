@@ -311,7 +311,7 @@ function install_test_no_depends() {
 function install_test_with_depends() {
   # TODO Test circular dependency resolution Rahul Chandra <rahul@tucanalinux.org>
   make_mock_package "libtest" "" "" ""
-  make_mock_package "install-test-depend", "libtest", "", ""
+  make_mock_package "install-test-depend" "libtest" "" ""
 
   chroot $CHROOT /bin/bash -c "neptune sync"
   chroot $CHROOT /bin/bash -c "neptune install --y install-test-depend"
