@@ -11,9 +11,6 @@ if os.geteuid() != 0:
    sys.exit()
 
 settings = NeptuneSettings()
-repo = settings.repo
-install_path = settings.install_path
-yes_mode = settings.yes_mode
 
 # Global vars
 cache_dir = f'{settings.install_path}/var/cache/mercury'
