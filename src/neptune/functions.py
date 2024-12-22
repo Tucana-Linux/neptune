@@ -3,16 +3,18 @@ import subprocess
 import sys
 import os
 import requests
-import yaml
+
+from neptune.settings import NeptuneSettings
 
 if os.geteuid() != 0:
    print("This package manager must be run as root")
    sys.exit()
-repo = ""
-install_path = ""
-yes_mode = False
-stream_chunk_size = 8192
 
+settings = NeptuneSettings()
+repo = settings.repo
+install_path = settings.install_path
+yes_mode = settings.yes_mode
+stream_chunk_size = settings.stream_chunk_size
 
 # Global vars
 cache_dir = f'{install_path}/var/cache/mercury'

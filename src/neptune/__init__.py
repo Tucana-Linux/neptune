@@ -18,10 +18,10 @@ def parse_config():
    except Exception as e:
       print(f"An unexpected error occured {e}")
    try:
-      functions.repo = config['repositories'][0]
-      functions.install_path = config['system-settings']['install_path']
-      functions.yes_mode = config['system-settings']['yes_mode_by_default']
-      functions.stream_chunk_size = config['system-settings']['stream_chunk_size']
+      functions.settings.repo = config['repositories'][0]
+      functions.settings.install_path = config['system-settings']['install_path']
+      functions.settings.yes_mode = config['system-settings']['yes_mode_by_default']
+      functions.settings.stream_chunk_size = config['system-settings']['stream_chunk_size']
    except KeyError as e:
       print(f"An unexpected value was found in {e}")
 
