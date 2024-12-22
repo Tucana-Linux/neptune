@@ -234,7 +234,7 @@ function arguments_test() {
   chroot $CHROOT /bin/bash -c "neptune sync"
 
   echo "Testing 'neptune install with yes_mode set to false without --y, should not proceed'..."
-  yq eval ".system-settings.yes_mode_by_default = false" -i $config_path
+  yq eval ".system-settings.yes_mode_by_default = false" -i $CHROOT/etc/neptune/config.yaml
   sleep 5
   chroot $CHROOT /bin/bash -c "neptune install arguments-test-2" >/dev/null 2>&1
   if [[ $? -eq 0 ]]; then
