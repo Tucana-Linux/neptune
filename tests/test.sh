@@ -20,7 +20,7 @@ function chroot_setup() {
      umount $CHROOT/dev
      umount $CHROOT/proc
      umount $CHROOT/sys
-     rm -rf $CHROOT
+     rm -rf $TEMP_DIR
   fi
   sleep 3  
   # Subset of the installer script, check there for explanations
