@@ -11,6 +11,7 @@ class NeptuneSettings:
         return cls._instance
     # not true constructor as it would attempt to call it every time then
     def init(self):
+        print("Reinitalizing")
         self.repo = ""
         self.install_path = ""
         self.yes_mode = False

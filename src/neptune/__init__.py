@@ -67,7 +67,7 @@ def run_operation():
          sync()
 def main():
    # also initalizes all the functions variables
-   functions.check_online()
    parse_config()
+   functions.check_online()
    parse_arguments()
    run_operation()
