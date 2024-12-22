@@ -289,7 +289,7 @@ function install_test_no_depends() {
     echo "Neptune exited with error code $?"
     return 1
   fi
-  if [ ! -f $CHROOT/tests/install-test/install_test ]; then
+  if [ ! -f $CHROOT/tests/install-test/install-test ]; then
     echo "Installation did not install the proper files"
     return 1
   fi
