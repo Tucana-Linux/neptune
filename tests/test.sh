@@ -133,6 +133,7 @@ function p_or_f() {
 # Test Functions
 function config_test() {
   echo "Running configuration test..."
+  make_mock_package "test-package" "" "" ""
 
   local config_path="$CHROOT/etc/neptune/config.yaml"
 
@@ -272,6 +273,12 @@ function install_test_no_depends() {
   make_mock_package "install-test" "" "" ""
 
   chroot $CHROOT /bin/bash -c "neptune sync"
+  # test non existent package first
+  if ! chroot $CHROOT /bin/bash -c "neptune install --y this-does-not-exist" | grep "not found"; then
+    echo "Install attempted to install a non-existent package"
+    return 1
+  fi
+  
   chroot $CHROOT /bin/bash -c "neptune install --y install-test"
   if [[ $? != 0 ]]; then
     echo "Neptune exited with error code $?"
@@ -488,16 +495,16 @@ function run_test() {
   $test_function >> "$test_name.log" 2>&1
   p_or_f "$test_name" "$?"
 }
-
 function run_tests() {
+  # these are synchronous, meaning that if one fails the next one is likely to also fail, so it exits if any test fails
   chroot_setup
   setup
   run_test sync_test "Neptune Sync"
-  run_test config_test "Neptune Config Check"
-  run_test arguments_test "Neptune Arugments Check"
   run_test install_test_no_depends "Neptune Install Without Depends"
   run_test install_test_with_depends "Neptune Install with Depends"
   run_test install_test_with_postinst "Neptune Postinstall"
+  run_test config_test "Neptune Config Check"
+  run_test arguments_test "Neptune Arugments Check"
   run_test reinstall_test "Neptune Reinstall"
   run_test remove_test "Neptune Remove"
   run_test update_test "Neptune Update"
