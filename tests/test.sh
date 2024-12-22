@@ -98,6 +98,9 @@ function make_mock_package() {
   date=$(date)
   echo "$pkgname $date" > "$pkgname"/tests/"$pkgname"/"$pkgname"
   echo "$depends" > $REPO_DIR/depend/depend-$pkgname
+  cd $REPO_DIR/depend/ || exit
+  tar -cvzpf depends.tar.xz *
+  cd - || exit
   if [[ $use_postinst == "true" ]]; then
     cat > "$pkgname"/postinst << EOF
 echo "This is a postinstall test"
@@ -244,6 +247,7 @@ function arguments_test() {
 }
 
 function sync_test() {
+  # todo fix this Rahul Chandra <rahul@tucanalinux.org>
   echo "Running sync test"
   # need to do this to init the repo
   make_mock_package "sync-test" "" "" ""
