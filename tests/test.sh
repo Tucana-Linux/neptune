@@ -359,13 +359,14 @@ function install_test_with_postinst() {
 
 function reinstall_test() {
   # If this test passes than we know that file io while the file is open is already working
+  make_mock_package "reinstall-test" "" "" ""
      # Create a script to keep the file open
     cat > $TEMP_DIR/keep_file_open.py << EOF
 import time
 import sys
 
 # Open the file and keep it open
-with open('$CHROOT/tests/install-test/install-test', 'r') as f:
+with open('/tests/reinstall-test/reinstall-test', 'r') as f:
     print("File opened. Waiting...")
     sys.stdout.flush()
     
@@ -374,14 +375,14 @@ with open('$CHROOT/tests/install-test/install-test', 'r') as f:
 EOF
 
     # Run file-keeping script in background
-    python3 /tmp/keep_file_open.py &
+    chroot $CHROOT /bin/bash -c "python3 /tmp/keep_file_open.py" &
     KEEP_FILE_PID=$!
 
     # Wait a moment to ensure file is opened
     sleep 2
 
     # Attempt to reinstall while file is open
-    neptune reinstall open-file-test
+    chroot $CHROOT /bin/bash -c "neptune reinstall open-file-test"
 
     # Check if reinstall succeeded
     if [[ $? == 0 ]]; then
