@@ -5,7 +5,7 @@ import os
 from neptune import functions
 
 def calculate_removed_dependencies(packages_to_remove):
-   future_wanted_packages = set(open(f"{functions.install_path}/etc/wanted_packages", "r").read().splitlines())
+   future_wanted_packages = set(open(f"{functions.settings.install_path}/etc/wanted_packages", "r").read().splitlines())
    for package in packages_to_remove:
       future_wanted_packages.remove(package)
    depends_of_wanted_packages = functions.get_depends(future_wanted_packages)
@@ -17,7 +17,7 @@ def remove():
       print("Nothing to do")
       sys.exit(0)
    # Only remove wanted packages
-   wanted_packages = set(open(f"{functions.install_path}/etc/wanted_packages", "r").read().splitlines())
+   wanted_packages = set(open(f"{functions.settings.install_path}/etc/wanted_packages", "r").read().splitlines())
    for package in functions.arguments:
       if not (package in functions.installed_packages):
          print(f"{package} is not installed")
@@ -26,11 +26,11 @@ def remove():
          print(f"{package} was installed as a dependency of another package, it can not be removed sanely")
          sys.exit(1)
    to_remove = calculate_removed_dependencies(functions.arguments)
-   if not functions.yes_mode:
+   if not functions.settings.yes_mode:
       print(f"Packages to be removed: {" ".join(to_remove)}")
       confirmation=input(f"{len(to_remove)} packages are queued to remove, would you like to continue? [Y/n] ")
       if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
          print("Aborting")
          sys.exit(0)
    functions.remove_packages(to_remove, "other")
-   subprocess.run(f"sed -i '/{package}/d' {functions.install_path}/etc/wanted_packages")
+   subprocess.run(f"sed -i '/{package}/d' {functions.settings.install_path}/etc/wanted_packages")

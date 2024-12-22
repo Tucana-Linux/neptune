@@ -29,7 +29,7 @@ def update():
    if len(updates) == 0:
       print("No updates found, try to sync")
       sys.exit(0)
-   if not functions.yes_mode:
+   if not functions.settings.yes_mode:
       print(f"Packages to be updated: {" ".join(updates)}")
       if len(install) > 0:
          print(f'Packages to be installed: {" ".join(install)}')
