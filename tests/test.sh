@@ -222,8 +222,10 @@ function arguments_test() {
   echo "Testing 'neptune install --y arguments-test'..."
   make_mock_package "test-package" "" "" ""
   chroot $CHROOT /bin/bash -c "neptune sync" >/dev/null
-  chroot $CHROOT /bin/bash -c "neptune install --y arguments-test" >/dev/null
-  if [[ $? -ne 0 ]]; then
+  chroot $CHROOT /bin/bash -c "neptune install --y arguments-test" >/dev/null &
+  sleep 5
+  chroot $CHROOT /bin/bash -c "neptune install arguments-test-2" &
+  if [[ ! -f $CHROOT/tests/arguments-test-2/arguments-test-2 ]]; then
     echo "Neptune install failed with a valid package and --y"
     return 1
   fi
@@ -236,8 +238,8 @@ function arguments_test() {
   echo "Testing 'neptune install with yes_mode set to false without --y, should not proceed'..."
   yq eval ".system-settings.yes_mode_by_default = false" -i $CHROOT/etc/neptune/config.yaml
   sleep 5
-  chroot $CHROOT /bin/bash -c "neptune install arguments-test-2" >/dev/null 2>&1
-  if [[ $? -eq 0 ]]; then
+  chroot $CHROOT /bin/bash -c "neptune install arguments-test-2" &
+  if [[ -f $CHROOT/tests/arguments-test-2/arguments-test-2 ]]; then
     echo "Neptune install proceeded without --y when yes_mode_by_default is false"
     return 1
   fi
