@@ -21,6 +21,7 @@ function chroot_setup() {
      umount $CHROOT/proc
      umount $CHROOT/sys
      rm -rf $TEMP_DIR
+     mkdir -p $TEMP_DIR $REPO_DIR $CHROOT $LOG_DIR
   fi
   sleep 3  
   # Subset of the installer script, check there for explanations
