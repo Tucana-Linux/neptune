@@ -63,7 +63,7 @@ function chroot_setup() {
 }
 
 function setup() {
-  mkdir -p $REPO_DIR/{packages,depends,available-packages}
+  mkdir -p $REPO_DIR/{packages,depend,available-packages}
   cd $TEMP_DIR
   cd ..
   python3 -m build --wheel --skip-dependency-check
