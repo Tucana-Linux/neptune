@@ -52,6 +52,7 @@ The package manager, used to install, update, reinstall, or remove packages
     if valid_cli_arguments[argindex] in functions.arguments:
       cooresponding[argindex] = True
       # How many packages could you possibly pass? probably fine to use remove
+      "YES MODE IS NOW ON"
       functions.arguments.remove(valid_cli_arguments[argindex])
 def run_operation():
    match operation:
