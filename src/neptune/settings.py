@@ -5,6 +5,7 @@ class NeptuneSettings:
     repo = ""
     install_path = ""
     yes_mode = False
+    no_depend_mode = False
     stream_chunk_size = 8192
     # common cheat, if a new instance is created just return the old one
     def __new__(cls):
