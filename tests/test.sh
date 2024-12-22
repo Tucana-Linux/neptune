@@ -199,7 +199,9 @@ function config_test() {
 
 function arguments_test() {
   echo "Running arguments test..."
+  make_mock_package "arguments-test" "" "" ""
   
+  chroot $CHROOT /bin/bash -c "neptune sync" >/dev/null 2>&1
   # Test: Install without arguments
   echo "Testing 'neptune install' without arguments..."
   chroot $CHROOT /bin/bash -c "neptune install" >/dev/null 2>&1
@@ -217,22 +219,26 @@ function arguments_test() {
   fi
 
   # Test: Install with a valid package and --y
-  echo "Testing 'neptune install --y test-package'..."
+  echo "Testing 'neptune install --y arguments-test'..."
   make_mock_package "test-package" "" "" ""
   chroot $CHROOT /bin/bash -c "neptune sync" >/dev/null
-  chroot $CHROOT /bin/bash -c "neptune install --y test-package" >/dev/null
+  chroot $CHROOT /bin/bash -c "neptune install --y arguments-test" >/dev/null
   if [[ $? -ne 0 ]]; then
     echo "Neptune install failed with a valid package and --y"
     return 1
   fi
 
   # Test: Install with a valid package without --y
-  echo "Testing 'neptune install test-package'..."
-  sed -i "s|yes_mode_by_default:.*|yes_mode_by_default: false|" "$CHROOT/etc/neptune/config.yaml"
-  chroot $CHROOT /bin/bash -c "neptune install test-package" >/dev/null 2>&1
+  # it will proceeed if all packages are installed so we need a new one if the last one worked
+  make_mock_package "arguments-test-2" "" "" ""
+  chroot $CHROOT /bin/bash -c "neptune sync"
+
+  echo "Testing 'neptune install with yes_mode set to false without --y, should not proceed'..."
+  yq eval ".system-settings.yes_mode_by_default = false" -i $config_path
+  sleep 5
+  chroot $CHROOT /bin/bash -c "neptune install arguments-test-2" >/dev/null 2>&1
   if [[ $? -eq 0 ]]; then
     echo "Neptune install proceeded without --y when yes_mode_by_default is false"
-    sed -i "s|yes_mode_by_default:.*|yes_mode_by_default: true|" "$CHROOT/etc/neptune/config.yaml"
     return 1
   fi
 
