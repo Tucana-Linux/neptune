@@ -14,7 +14,7 @@ def calculate_removed_dependencies(packages_to_remove):
     
 def remove():
    if not len(functions.arguments) > 0:
-      print("Usage: neptune-remove \{PACKAGES\}") 
+      print("Usage: neptune-remove {{PACKAGES}}") 
       sys.exit(1)
    # Only remove wanted packages
    wanted_packages = set(open(f"{functions.settings.install_path}/etc/wanted_packages", "r").read().splitlines())
