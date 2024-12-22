@@ -11,13 +11,9 @@ if os.geteuid() != 0:
    sys.exit()
 
 settings = NeptuneSettings()
-repo = settings.repo
-install_path = settings.install_path
-yes_mode = settings.yes_mode
-stream_chunk_size = settings.stream_chunk_size
 
 # Global vars
-cache_dir = f'{install_path}/var/cache/mercury'
+cache_dir = f'{settings.settings.install_path}/var/cache/mercury'
 postinstalls = []
 packages=[]
 packages_set = set()
@@ -26,7 +22,7 @@ operation = ""
 
 try:
    available_packages = set(open(f"{cache_dir}/available-packages", "r").read().splitlines())
-   installed_packages = set(open(f"{install_path}/etc/installed_package", "r").read().splitlines())
+   installed_packages = set(open(f"{settings.settings.install_path}/etc/installed_package", "r").read().splitlines())
 except FileNotFoundError:
    print("Unless you are installing Tucana by-hand (in which case run sync), you have a serious problem")
    print("Either the installed_packages file or the available_packages file is missing, one is much worse than the other")
@@ -44,7 +40,7 @@ Universal Functions
 
 def check_online():
    try:
-      check_file = requests.head(f'{repo}/available-packages/sha256')
+      check_file = requests.head(f'{settings.repo}/available-packages/sha256')
       if check_file.status_code != requests.codes.ok:
          print("This does not seem to be a Tucana repo server")
          sys.exit(1)
@@ -68,7 +64,7 @@ def download_link(link, output_path):
       download = requests.get(link, stream=True)
       with open(output_path, 'wb') as file:
          # use streams as these can get big
-         for chunk in download.iter_content(chunk_size=stream_chunk_size):
+         for chunk in download.iter_content(chunk_size=settings.stream_chunk_size):
             file.write(chunk)
    except requests.RequestException as e:
       print(f"Failed to download {link}, you have likely lost internet, error: {e}")
@@ -77,7 +73,7 @@ def download_link(link, output_path):
 
 def download_package(package):
    print(f"Downloading {package}")
-   download_link(f'{repo}/packages/{package}.tar.xz', f'{cache_dir}/{package}.tar.xz')
+   download_link(f'{settings.repo}/packages/{package}.tar.xz', f'{cache_dir}/{package}.tar.xz')
    
 
 def check_for_and_delete(path_to_delete):
@@ -85,9 +81,9 @@ def check_for_and_delete(path_to_delete):
       subprocess.run(f'rm -f {path_to_delete}/', shell=True)
 
 def copy_files(package):
-   subprocess.run(f'cp -rp {package}/* {install_path}', shell=True)
+   subprocess.run(f'cp -rp {package}/* {settings.install_path}', shell=True)
    for i in ['depends', 'depend', 'make-depend', 'make-depends', 'postinst', 'preinst', 'prerm', 'preupdate']:
-      check_for_and_delete(f'{install_path}/{i}')
+      check_for_and_delete(f'{settings.install_path}/{i}')
 
 def update_files(package):
    # needed for updates & reinstalls
@@ -96,7 +92,7 @@ def update_files(package):
       # Find all the directories and create them if they don't exist
    for root, dirs, files in os.walk(f'.'):
       for dir_name in dirs:
-         folder_path = os.path.join(install_path, os.path.join(root, dir_name).lstrip('.'))
+         folder_path = os.path.join(settings.install_path, os.path.join(root, dir_name).lstrip('.'))
          os.makedirs(folder_path, exist_ok=True)
       backup = []
       for file in files:
@@ -110,7 +106,7 @@ def update_files(package):
                print(f"Error reading from backup file, aborting update for {package}")
                return
 
-         file_path = os.path.join(install_path, os.path.join(root, file).lstrip('.'))
+         file_path = os.path.join(settings.install_path, os.path.join(root, file).lstrip('.'))
          if file_path not in backup:
             subprocess.run(f'mv {os.path.join(root, file)} {file_path}', shell=True)
    os.chdir(cache_dir)
@@ -139,9 +135,9 @@ def install_package(package, operation):
       postinstalls.append(package)
       subprocess.run(f'cp {package}/postinst /tmp/{package}-postinst', shell=True)
    if package != "base":
-      open(f'{install_path}/etc/installed_package', 'a').write(package + "\n")
+      open(f'{settings.install_path}/etc/installed_package', 'a').write(package + "\n")
    else:
-      open(f'{install_path}/etc/installed_package', 'a').write("base-update\n")
+      open(f'{settings.install_path}/etc/installed_package', 'a').write("base-update\n")
    print("Removing Cache")
    subprocess.run(f'rm -rf {package}', shell=True)
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)
@@ -190,9 +186,9 @@ def recalculate_system_depends():
       if not (package in available_packages):
          print(f"{package} no longer exists")
          remove.append(package)
-         subprocess.run(f'sed -i \'/{package}/d\' {install_path}/etc/wanted_packages', shell=True)
+         subprocess.run(f'sed -i \'/{package}/d\' {settings.install_path}/etc/wanted_packages', shell=True)
    # this isn't global because sync doesn't create this file
-   wanted_packages = set(open(f"{install_path}/etc/wanted_packages", "r").read().splitlines())
+   wanted_packages = set(open(f"{settings.install_path}/etc/wanted_packages", "r").read().splitlines())
    depends_of_wanted_packages = get_depends(wanted_packages, check_installed=False)
 
    install = [pkg for pkg in depends_of_wanted_packages if pkg not in installed_packages]
@@ -210,10 +206,10 @@ def remove_package(package):
    print(f"Removing {package}")
    for file in files:
       # os/subprocesses remove function will crash the system if it's removing something that is currently in use
-      check_for_and_delete(f'{install_path}/{file}', shell=True)
+      check_for_and_delete(f'{settings.install_path}/{file}', shell=True)
    # Sed's are easier to understand
    # it's removed from wanted in remove.py
-   subprocess.run(f"sed -i '/{package}/d' {install_path}/etc/installed_package" , shell=True)
+   subprocess.run(f"sed -i '/{package}/d' {settings.install_path}/etc/installed_package" , shell=True)
 
 def remove_packages(packages):
    for package in packages:
