@@ -60,7 +60,7 @@ function chroot_setup() {
 
   # TODO Change to /var/lib/neptune once neptune is finalized Rahul Chandra <rahul@tucanalinux.org>
   mkdir -p $CHROOT/var/cache/mercury/file-lists
-  chroot $CHROOT /bin/bash -c "mercury-install python-urllib3 python-requests pyyaml"
+  chroot $CHROOT /bin/bash -c "mercury-install --y python-urllib3 python-requests pyyaml"
 }
 
 function setup() {

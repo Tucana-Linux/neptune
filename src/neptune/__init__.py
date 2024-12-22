@@ -33,7 +33,7 @@ The package manager, used to install, update, reinstall, or remove packages
     if valid_cli_arguments[arg] in arguments:
       cooresponding[arg] = True
       # How many packages could you possibly pass? probably fine to use remove
-      arguments.remove(cooresponding[arg])
+      arguments.remove(valid_cli_arguments[arg])
 def run_operation():
    match operation:
       case "install":
