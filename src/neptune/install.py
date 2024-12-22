@@ -12,7 +12,7 @@ def install():
       print("Nothing to do all packages are installed")
       sys.exit()
 
-   if not functions.yes_mode:
+   if not functions.settings.yes_mode:
       print(f"Packages to install: {" ".join(functions.packages)}") 
       confirmation=input(f"{len(functions.packages)} packages are queued to install, would you like to continue? [Y/n] ")
       if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
