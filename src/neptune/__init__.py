@@ -1,5 +1,6 @@
 #!/bin/python3
-from neptune.functions import * 
+import sys
+import neptune.functions as functions 
 from neptune.install import install
 from neptune.reinstall import reinstall
 from neptune.remove import remove
@@ -8,9 +9,9 @@ from neptune.update import update
 
 def parse_arguments():
   valid_cli_arguments = ["--y", "--no-depend"]
-  cooresponding = [yes_mode, no_depend_mode]
+  cooresponding = [functions.yes_mode, functions.no_depend_mode]
 
-  if len(arguments) == 0 or (arguments[0] not in ("install", "update", "sync", "reinstall", "remove")):
+  if len(functions.arguments) == 0 or (functions.arguments[0] not in ("install", "update", "sync", "reinstall", "remove")):
      usage="""Usage: neptune [operation] [flags] [packages (if applicable)]
            
 The package manager, used to install, update, reinstall, or remove packages
@@ -27,13 +28,13 @@ The package manager, used to install, update, reinstall, or remove packages
      print(usage)
      sys.exit(0)
   global operation
-  operation = arguments[0]
-  arguments.pop(0)
-  for arg in range(len(valid_cli_arguments)):
-    if valid_cli_arguments[arg] in arguments:
-      cooresponding[arg] = True
+  operation = functions.arguments[0]
+  functions.arguments.pop(0)
+  for argindex in range(len(valid_cli_arguments)):
+    if valid_cli_arguments[argindex] in functions.arguments:
+      cooresponding[argindex] = True
       # How many packages could you possibly pass? probably fine to use remove
-      arguments.remove(valid_cli_arguments[arg])
+      functions.arguments.remove(valid_cli_arguments[argindex])
 def run_operation():
    match operation:
       case "install":
@@ -48,6 +49,6 @@ def run_operation():
          sync()
 def main():
    # also initalizes all the functions variables
-   check_online()
+   functions.check_online()
    parse_arguments()
    run_operation()
