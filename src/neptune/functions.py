@@ -157,7 +157,6 @@ def install_package(package, operation):
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)
 
 def install_packages(packages, operation):
-   check_if_packages_exist(packages)
    for package in packages:
       install_package(package, operation)
    postinst()

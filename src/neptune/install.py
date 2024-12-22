@@ -5,6 +5,7 @@ import requests
 from neptune import functions
 
 def install():
+   functions.check_if_packages_exist(functions.arguments)
    print("Getting dependencies")
    functions.get_depends(functions.arguments, check_installed=True)
    if len(functions.packages) == 0:
