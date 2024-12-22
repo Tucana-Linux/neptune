@@ -27,7 +27,7 @@ def parse_config():
 
 def parse_arguments():
   valid_cli_arguments = ["--y", "--no-depend"]
-  cooresponding = [functions.yes_mode, functions.no_depend_mode]
+  cooresponding = [functions.settings.yes_mode, functions.settings.no_depend_mode]
 
   if len(functions.arguments) == 0 or (functions.arguments[0] not in ("install", "update", "sync", "reinstall", "remove")):
      usage="""Usage: neptune [operation] [flags] [packages (if applicable)]
