@@ -220,12 +220,11 @@ function arguments_test() {
 
   # Test: Install with a valid package and --y
   echo "Testing 'neptune install --y arguments-test'..."
-  make_mock_package "test-package" "" "" ""
+  make_mock_package "arguments-test" "" "" ""
   chroot $CHROOT /bin/bash -c "neptune sync" >/dev/null
-  chroot $CHROOT /bin/bash -c "neptune install --y arguments-test" >/dev/null &
   sleep 5
-  chroot $CHROOT /bin/bash -c "neptune install arguments-test-2" &
-  if [[ ! -f $CHROOT/tests/arguments-test-2/arguments-test-2 ]]; then
+  chroot $CHROOT /bin/bash -c "neptune install arguments-test" &
+  if [[ ! -f $CHROOT/tests/arguments-test/arguments-test ]]; then
     echo "Neptune install failed with a valid package and --y"
     return 1
   fi
