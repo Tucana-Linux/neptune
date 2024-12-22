@@ -177,6 +177,7 @@ function config_test() {
 
   # Test: Modify yes_mode_by_default
   # This test is repeated during arguments
+  chroot $CHROOT /bin/bash -c "neptune sync"
   echo "Testing yes_mode_by_default..."
   yq eval ".system-settings.yes_mode_by_default = true" -i $config_path
   chroot $CHROOT /bin/bash -c "neptune install test-package" >/dev/null 2>&1 &
