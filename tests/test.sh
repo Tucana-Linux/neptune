@@ -164,7 +164,7 @@ function config_test() {
 
   # Test: Modify install path
   echo "Testing install path..."
-  yq eval ".install_path = \"/invalid/path\"" -i $config_path
+  yq eval ".system-settings.install_path = \"/invalid/path\"" -i $config_path
   chroot $CHROOT /bin/bash -c "neptune install --y test-package" >/dev/null 2>&1
   if [[ $? -eq 0 ]]; then
     echo "Neptune install succeeded with invalid install path, which should not happen"
@@ -173,12 +173,12 @@ function config_test() {
   fi
 
   # Restore the install path for subsequent tests
-  yq eval ".install_path = \"$CHROOT\"" -i $config_path
+  yq eval ".system-settings.install_path = \"$CHROOT\"" -i $config_path
 
   # Test: Modify yes_mode_by_default
   # This test is repeated during arguments
   echo "Testing yes_mode_by_default..."
-  yq eval ".yes_mode_by_default = true" -i $config_path
+  yq eval ".system-settings.yes_mode_by_default = true" -i $config_path
   chroot $CHROOT /bin/bash -c "neptune install test-package" >/dev/null 2>&1 &
   sleep 5
   if [[ ! -f $CHROOT/tests/test-package/test-package ]]; then
