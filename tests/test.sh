@@ -477,7 +477,7 @@ function remove_test() {
   chroot $CHROOT /bin/bash -c "neptune install --y remove-test"
 
   # Attempt to remove the installed packages
-  chroot $CHROOT /bin/bash -c "neptune remove --y install-test"
+  chroot $CHROOT /bin/bash -c "neptune remove --y remove-test"
   if [[ $? != 0 ]]; then
     echo "Test failed: neptune remove ended with a non-zero status code"
   fi
@@ -500,7 +500,7 @@ function remove_test() {
     return 1
   fi
 
-  if cat $CHROOT/etc/installed_package | grep "install-test-depend"; then
+  if cat $CHROOT/etc/installed_package | grep "remove-test-depend"; then
     echo "Test failed: remove-test-depend is still listed in installed_package after removal"
     return 1
   fi
