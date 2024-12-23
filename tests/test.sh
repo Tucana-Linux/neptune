@@ -391,7 +391,6 @@ EOF
     if [[ $? == 0 ]]; then
         echo "Reinstall succeeded with open file"
         kill $KEEP_FILE_PID
-        return 0
     else
         echo "Reinstall could not write the file"
         kill $KEEP_FILE_PID
@@ -403,6 +402,7 @@ EOF
       echo "Reinstall attempted to reinstall a package that is not installed"
       return 1
     fi
+    return 0
     
 }
 

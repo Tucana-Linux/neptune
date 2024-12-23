@@ -8,7 +8,7 @@ def calculate_removed_dependencies(packages_to_remove):
    future_wanted_packages = set(open(f"{functions.settings.install_path}/etc/wanted_packages", "r").read().splitlines())
    for package in packages_to_remove:
       future_wanted_packages.remove(package)
-   depends_of_wanted_packages = functions.get_depends(future_wanted_packages)
+   depends_of_wanted_packages = functions.get_depends(future_wanted_packages, False)
    remove = [pkg for pkg in functions.installed_packages if pkg not in depends_of_wanted_packages]
    return remove
     
