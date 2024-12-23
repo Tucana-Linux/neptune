@@ -56,7 +56,7 @@ def generate_file_list(package):
     backup=parse_backup_file(package)
     if not len(backup) == 0:
        for file in backup:
-          subprocess.run(f"sed -i '|{file}|d' {cache_dir}/file-lists/{package}.list", shell=True)
+          subprocess.run(f"sed -i '!{file}!d' {cache_dir}/file-lists/{package}.list", shell=True)
     os.chdir(cache_dir)
 
 def postinst():
