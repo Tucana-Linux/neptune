@@ -32,5 +32,5 @@ def remove():
       if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
          print("Aborting")
          sys.exit(0)
-   functions.remove_packages(to_remove, "other")
+   functions.remove_packages(to_remove)
    subprocess.run(f"sed -i '/{package}/d' {functions.settings.install_path}/etc/wanted_packages")
