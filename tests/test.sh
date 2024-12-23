@@ -111,7 +111,8 @@ touch /tests/$pkgname/postinst-success
 EOF
   fi
 
-  if [[ $backup != "" ]]; then
+  if [[ $backup == "1" ]]; then
+    echo "BACKUP IS GOING"
     echo "option1=original" > "$pkgname"/tests/"$pkgname"/config.yaml
     echo "/tests/$pkgname/config.yaml" > $pkgname/backup
   fi
