@@ -113,8 +113,6 @@ def update_files(package):
             continue
          file_path = os.path.join(settings.install_path, os.path.join(root, file).lstrip('.'))
          # TODO Implement logging Rahul Chandra <rahul@tucanalinux.org>
-         if file_path in backup:
-            subprocess.run(f"sed -i '|{file_path}|d' ${cache_dir}/file-lists/{package}.list")
          if file_path not in backup:
             subprocess.run(f'mv {os.path.join(root, file)} {file_path}', shell=True)
    os.chdir(cache_dir)
