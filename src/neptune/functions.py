@@ -86,8 +86,15 @@ def copy_files(package):
 
 def update_files(package):
    # needed for updates & reinstalls
+   backup=[]
    os.chdir(f'{cache_dir}/{package}')
-   
+   if os.path.isfile('./backup'):
+      try:
+         with open('backup', 'r') as backup_file:
+            backup = [os.path.join(settings.install_path, line.rstrip()) for line in backup_file]
+      except Exception as e:
+         print(f"Error reading from backup file error {e}, aborting update for {package}")
+         return
       # Find all the directories and create them if they don't exist
    for root, dirs, files in os.walk(f'.'):
       for dir_name in dirs:
@@ -97,16 +104,6 @@ def update_files(package):
       for file in files:
          if file in ('postinst', 'depends'):
             continue
-         if file == 'backup':
-            try:
-               with open('backup', 'r') as backup_file:
-                  backup = [os.path.join(settings.install_path, line.rstrip()) for line in backup_file]
-                  continue
-            except Exception as e:
-               print(f"Error reading from backup file, aborting update for {package}")
-               return
-            
-
          file_path = os.path.join(settings.install_path, os.path.join(root, file).lstrip('.'))
          # TODO Implement logging Rahul Chandra <rahul@tucanalinux.org>
          print(backup)
