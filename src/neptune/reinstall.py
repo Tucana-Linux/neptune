@@ -12,7 +12,7 @@ Reinstall
 
 def reinstall():
    if not len(functions.arguments) > 0:
-      print("Usage: neptune-reinstall \{PACKAGES\}") 
+      print("Usage: neptune-reinstall {{PACKAGES}}") 
       sys.exit(1)
    if not functions.settings.yes_mode:
       print(f"Packages to be reinstall: {" ".join(functions.arguments)}")
@@ -20,4 +20,4 @@ def reinstall():
       if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
          print("Aborting")
          sys.exit(0)
-   functions.install_packages(functions.arguments, "other")
+   functions.install_packages(functions.arguments, "other", reinstallng=True)

@@ -75,10 +75,9 @@ def download_package(package):
    print(f"Downloading {package}")
    download_link(f'{settings.repo}/packages/{package}.tar.xz', f'{cache_dir}/{package}.tar.xz')
    
-
 def check_for_and_delete(path_to_delete):
-   if os.path.exists(path_to_delete):
-      subprocess.run(f'rm -f {path_to_delete}/', shell=True)
+   # in case more logic is needed later
+   subprocess.run(f'rm -f {path_to_delete}/', shell=True)
 
 def copy_files(package):
    subprocess.run(f'cp -rp {package}/* {settings.install_path}', shell=True)
@@ -111,7 +110,7 @@ def update_files(package):
             subprocess.run(f'mv {os.path.join(root, file)} {file_path}', shell=True)
    os.chdir(cache_dir)
 
-def install_package(package, operation):
+def install_package(package, operation, reinstalling=False):
    if not os.path.exists(cache_dir):
       os.makedirs(cache_dir)
    os.chdir(cache_dir)
@@ -134,10 +133,11 @@ def install_package(package, operation):
    if os.path.exists(f'{package}/postinst'):
       postinstalls.append(package)
       subprocess.run(f'cp {package}/postinst /tmp/{package}-postinst', shell=True)
-   if package != "base":
-      open(f'{settings.install_path}/etc/installed_package', 'a').write(package + "\n")
-   else:
-      open(f'{settings.install_path}/etc/installed_package', 'a').write("base-update\n")
+   if not reinstalling:
+      if package != "base":
+         open(f'{settings.install_path}/etc/installed_package', 'a').write(package + "\n")
+      else:
+         open(f'{settings.install_path}/etc/installed_package', 'a').write("base-update\n")
    print("Removing Cache")
    subprocess.run(f'rm -rf {package}', shell=True)
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)

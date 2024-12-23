@@ -360,6 +360,9 @@ function install_test_with_postinst() {
 function reinstall_test() {
   # If this test passes than we know that file io while the file is open is already working
   make_mock_package "reinstall-test" "" "" ""
+  chroot $CHROOT /bin/bash -c "neptune sync"
+  chroot $CHROOT /bin/bash -c "neptune --y install reinstall-test"
+
      # Create a script to keep the file open
     cat > $CHROOT/keep_file_open.py << EOF
 import time
@@ -382,7 +385,7 @@ EOF
     sleep 2
 
     # Attempt to reinstall while file is open
-    chroot $CHROOT /bin/bash -c "neptune reinstall --y open-file-test"
+    chroot $CHROOT /bin/bash -c "neptune reinstall --y reinstall-test"
 
     # Check if reinstall succeeded
     if [[ $? == 0 ]]; then
@@ -394,6 +397,13 @@ EOF
         kill $KEEP_FILE_PID
         return 1
     fi
+
+    # Make sure it won't attempt to reinstall something that is not installed
+    if ! chroot $CHROOT /bin/bash -c "neptune reinstall --y reinstall-test-2" | grep "not installed"; then
+      echo "Reinstall attempted to reinstall a package that is not installed"
+      return 1
+    fi
+    
 }
 
 function update_test() {
