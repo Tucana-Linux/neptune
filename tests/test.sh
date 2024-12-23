@@ -361,7 +361,7 @@ function reinstall_test() {
   # If this test passes than we know that file io while the file is open is already working
   make_mock_package "reinstall-test" "" "" ""
   chroot $CHROOT /bin/bash -c "neptune sync"
-  chroot $CHROOT /bin/bash -c "neptune --y install reinstall-test"
+  chroot $CHROOT /bin/bash -c "neptune install --y reinstall-test"
 
      # Create a script to keep the file open
     cat > $CHROOT/keep_file_open.py << EOF
