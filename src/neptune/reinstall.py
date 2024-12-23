@@ -20,4 +20,4 @@ def reinstall():
       if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
          print("Aborting")
          sys.exit(0)
-   functions.install_packages(functions.arguments, "other", reinstallng=True)
+   functions.install_packages(functions.arguments, "other", reinstalling=True)
