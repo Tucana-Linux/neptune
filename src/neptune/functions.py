@@ -77,7 +77,7 @@ def download_package(package):
    
 def check_for_and_delete(path_to_delete):
    # in case more logic is needed later
-   subprocess.run(f'rm -f {path_to_delete}/', shell=True)
+   subprocess.run(f'rm -f {path_to_delete}', shell=True)
 
 def copy_files(package):
    subprocess.run(f'cp -rp {package}/* {settings.install_path}', shell=True)

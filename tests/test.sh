@@ -485,7 +485,7 @@ function remove_test() {
 
   # Check if files from the packages were removed
   if [ -f "$CHROOT/tests/remove-test/remove-test" ]; then
-    echo "Test failed: install-test files still present after removal"
+    echo "Test failed: remove-test files still present after removal"
     return 1
   fi
 
