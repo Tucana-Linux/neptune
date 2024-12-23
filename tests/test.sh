@@ -467,7 +467,7 @@ function update_test() {
     return 1
   fi
 
-  if [ -f $CHROOT/tests/libupdatenew/libupdatenew ]; then
+  if [ ! -f $CHROOT/tests/libupdatenew/libupdatenew ]; then
     echo "Test failed: New dependency not installed"
     return 1
   fi
