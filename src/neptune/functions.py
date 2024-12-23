@@ -92,7 +92,7 @@ def parse_backup_file(package):
       except Exception as e:
          print(f"Error reading from backup file error {e}, aborting updates")
          sys.exit(1)
-      return backup
+   return backup
 
 def copy_files(package):
    # doesn't check for backup because it is only used on first install
