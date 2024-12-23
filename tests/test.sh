@@ -59,7 +59,7 @@ function chroot_setup() {
   chroot $CHROOT /bin/bash -c "locale-gen"
 
   # TODO Change to /var/lib/neptune once neptune is finalized Rahul Chandra <rahul@tucanalinux.org>
-  mkdir -p $CHROOT/var/cache/mercury/file-lists
+  mkdir -p $CHROOT/var/lib/neptune/file-lists
   chroot $CHROOT /bin/bash -c "mercury-install --y python-urllib3 python-requests pyyaml"
   # remove the installed_package so it can be fresh neptune
   rm $CHROOT/etc/installed_package
@@ -274,11 +274,11 @@ function sync_test() {
   fi
 
   # Validate that the files were fetched and extracted
-  if [[ ! -f $CHROOT/var/cache/mercury/available-packages ]]; then
+  if [[ ! -f $CHROOT/var/lib/neptune/cache/available-packages ]]; then
     echo "Available packages file not downloaded"
     return 1
   fi
-  if [[ ! -d $CHROOT/var/cache/mercury/depend ]]; then
+  if [[ ! -d $CHROOT/var/lib/neptune/cache/depend ]]; then
     echo "Dependency files not extracted"
     return 1
   fi
@@ -306,7 +306,7 @@ function install_test_no_depends() {
     echo "Installation did not install the proper files"
     return 1
   fi
-  if [ ! -f $CHROOT/var/cache/mercury/file-lists/install-test.list ]; then
+  if [ ! -f $CHROOT/var/lib/neptune/file-lists/install-test.list ]; then
     echo "Installation did not install the file list"
     return 1
   fi
@@ -430,7 +430,7 @@ function update_test() {
   make_mock_package "libupdatenew" "" "" ""
   chroot $CHROOT /bin/bash -c "neptune sync"
   # TODO When doing integrity checking check to see how you are going to resolve new packages always updating
-  cp $CHROOT/var/cache/mercury/sha256 $CHROOT/var/cache/mercury/current
+  cp $CHROOT/var/lib/neptune/cache/sha256 $CHROOT/var/lib/neptune/current
   chroot $CHROOT /bin/bash -c "neptune install --y update-test-root"
   if [[ $? != 0 ]]; then
     echo "Test failed: Could not install package"

@@ -13,7 +13,8 @@ if os.geteuid() != 0:
 settings = NeptuneSettings()
 
 # Global vars
-cache_dir = f'{settings.install_path}/var/cache/mercury'
+lib_dir = f'{settings.install_path}/var/lib/neptune'
+cache_dir = f'{settings.install_path}/{lib_dir}/cache'
 postinstalls = []
 packages=[]
 packages_set = set()
@@ -22,7 +23,7 @@ operation = ""
 
 try:
    available_packages = set(open(f"{cache_dir}/available-packages", "r").read().splitlines())
-   installed_packages = set(open(f"{settings.install_path}/etc/installed_package", "r").read().splitlines())
+   installed_packages = set(open(f"{lib_dir}/installed_package", "r").read().splitlines())
 except FileNotFoundError:
    print("Unless you are installing Tucana by-hand (in which case run sync), you have a serious problem")
    print("Either the installed_packages file or the available_packages file is missing, one is much worse than the other")
