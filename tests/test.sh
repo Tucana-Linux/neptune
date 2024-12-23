@@ -426,7 +426,7 @@ function update_test() {
   make_mock_package "update-test-root" "libupdate" "" "1"
   make_mock_package "libupdate" "" "" ""
   make_mock_package "libupdatenew" "" "" ""
-
+  chroot $CHROOT /bin/bash -c "neptune sync"
   chroot $CHROOT /bin/bash -c "neptune install --y update-test-root"
   if [[ $? != 0 ]]; then
     echo "Test failed: Could not install package"
