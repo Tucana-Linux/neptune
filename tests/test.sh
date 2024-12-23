@@ -62,7 +62,8 @@ function chroot_setup() {
   mkdir -p $CHROOT/var/cache/mercury/file-lists
   chroot $CHROOT /bin/bash -c "mercury-install --y python-urllib3 python-requests pyyaml"
   # remove the installed_package so it can be fresh neptune
-  echo "" > $CHROOT/etc/installed_package
+  rm $CHROOT/etc/installed_package
+  touch $CHROOT/etc/installed_package
 }
 
 function setup() {
@@ -434,7 +435,7 @@ function update_test() {
     return 1
   fi
   # We don't need to retest whether the depend was installed or not because that should've already been tested
-  make_mock_package "update-test-root" "libupdatenew" "" ""
+  make_mock_package "update-test-root" "libupdatenew" "" "1"
   echo "option 1=new" > $CHROOT/tests/update-test-root/config.yaml
   CONFIG_HASH=$(sha256sum $CHROOT/tests/update-test-root/config.yaml)
   FILE_HASH=$(sha256sum $CHROOT/tests/update-test-root/update-test-root)
