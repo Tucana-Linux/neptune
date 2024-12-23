@@ -434,17 +434,17 @@ function update_test() {
   fi
   # We don't need to retest whether the depend was installed or not because that should've already been tested
   make_mock_package "update-test-root" "libupdatenew" "" ""
-  echo "option 1=new" > $CHROOT/test/update-test-root/config.yaml
-  CONFIG_HASH=$(sha256sum $CHROOT/test/update-test-root/config.yaml)
-  FILE_HASH=$(sha256sum $CHROOT/test/update-test-root/update-test-root)
+  echo "option 1=new" > $CHROOT/tests/update-test-root/config.yaml
+  CONFIG_HASH=$(sha256sum $CHROOT/tests/update-test-root/config.yaml)
+  FILE_HASH=$(sha256sum $CHROOT/tests/update-test-root/update-test-root)
   chroot $CHROOT /bin/bash -c "neptune sync"
   chroot $CHROOT /bin/bash -c "neptune update --y"
   if [[ $? != 0 ]]; then
     echo "Test failed: neptune update exited with non-zero code"
     return 1
   fi
-  CONFIG_HASH_2=$(sha256sum $CHROOT/test/update-test-root/config.yaml)
-  FILE_HASH_2=$(sha256sum $CHROOT/test/update-test-root/update-test-root)
+  CONFIG_HASH_2=$(sha256sum $CHROOT/tests/update-test-root/config.yaml)
+  FILE_HASH_2=$(sha256sum $CHROOT/tests/update-test-root/update-test-root)
   
   if [[ $FILE_HASH_2 == "$FILE_HASH" ]]; then
     echo "Test failed: Did not update file"
