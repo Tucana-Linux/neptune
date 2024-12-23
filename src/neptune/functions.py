@@ -52,7 +52,11 @@ def generate_file_list(package):
     os.chdir(f'{cache_dir}/{package}')
     # This is a bash oneliner, I know it isn't ideal but it's easier to read than the python alternative
     subprocess.run(f'find * -type f | sed \'s|^|/|g\' > {cache_dir}/file-lists/{package}.list', shell=True)
-    os.chdir(cache_dir)
+    # Remove the files that need to be backed up from the file-list so that they aren't removed
+    backup=parse_backup_file(package)
+    if not len(backup) == 0:
+       for file in backup:
+          subprocess.run(f"sed -i '|{file}|d' {cache_dir}/file-lists/{package}.list")
 
 def postinst():
    for package in postinstalls:
@@ -78,14 +82,7 @@ def download_package(package):
 def check_for_and_delete(path_to_delete):
    # in case more logic is needed later
    subprocess.run(f'rm -f {path_to_delete}', shell=True)
-
-def copy_files(package):
-   subprocess.run(f'cp -rp {package}/* {settings.install_path}', shell=True)
-   for i in ['depends', 'depend', 'make-depend', 'make-depends', 'postinst', 'preinst', 'prerm', 'preupdate']:
-      check_for_and_delete(f'{settings.install_path}/{i}')
-
-def update_files(package):
-   # needed for updates & reinstalls
+def parse_backup_file(package):
    backup=[]
    os.chdir(f'{cache_dir}/{package}')
    if os.path.isfile('./backup'):
@@ -93,9 +90,19 @@ def update_files(package):
          with open('backup', 'r') as backup_file:
             backup = [os.path.join(settings.install_path, line.rstrip()) for line in backup_file]
       except Exception as e:
-         print(f"Error reading from backup file error {e}, aborting update for {package}")
-         return
-      # Find all the directories and create them if they don't exist
+         print(f"Error reading from backup file error {e}, aborting updates")
+         sys.exit(1)
+      return backup
+
+def copy_files(package):
+   # doesn't check for backup because it is only used on first install
+   subprocess.run(f'cp -rp {package}/* {settings.install_path}', shell=True)
+   for i in ['depends', 'depend', 'make-depend', 'make-depends', 'postinst', 'preinst', 'prerm', 'preupdate', 'backup']:
+      check_for_and_delete(f'{settings.install_path}/{i}')
+
+def update_files(package):
+   # needed for updates & reinstalls
+   backup=parse_backup_file(package)
    for root, dirs, files in os.walk(f'.'):
       for dir_name in dirs:
          folder_path = os.path.join(settings.install_path, os.path.join(root, dir_name).lstrip('.'))
@@ -105,10 +112,8 @@ def update_files(package):
             continue
          file_path = os.path.join(settings.install_path, os.path.join(root, file).lstrip('.'))
          # TODO Implement logging Rahul Chandra <rahul@tucanalinux.org>
-         print(backup)
-         print(file_path)
          if file_path in backup:
-            print(f"BACKUP ENGAGED FOR {file_path}")
+            subprocess.run(f"sed -i '|{file_path}|d' ${cache_dir}/file-lists/{package}.list")
          if file_path not in backup:
             subprocess.run(f'mv {os.path.join(root, file)} {file_path}', shell=True)
    os.chdir(cache_dir)
