@@ -67,6 +67,7 @@ function chroot_setup() {
   # remove the installed_package so it can be fresh neptune
   rm -f $CHROOT//var/lib/neptune/installed_package
   touch $CHROOT//var/lib/neptune/installed_package
+  touch $CHROOT/var/lib/neptune/cache/available-packages
 }
 
 function setup() {
