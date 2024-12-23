@@ -6,7 +6,7 @@ from neptune import functions
 
 def install():
    if not len(functions.arguments) > 0:
-      print("Usage: neptune-install \{PACKAGES\}") 
+      print("Usage: neptune-install {{PACKAGES}}") 
       sys.exit(1)
    functions.check_if_packages_exist(functions.arguments)
    print("Getting dependencies")
