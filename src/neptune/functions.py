@@ -108,6 +108,7 @@ def update_files(package):
          file_path = os.path.join(settings.install_path, os.path.join(root, file).lstrip('.'))
          # TODO Implement logging Rahul Chandra <rahul@tucanalinux.org>
          print(backup)
+         print(file_path)
          if file_path not in backup:
             subprocess.run(f'mv {os.path.join(root, file)} {file_path}', shell=True)
    os.chdir(cache_dir)
