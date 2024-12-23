@@ -454,7 +454,7 @@ function update_test() {
   
   if [[ $FILE_HASH_2 == "$FILE_HASH" ]]; then
     echo "Test failed: Did not update file"
-    return 1;
+    return 1
   fi
 
   if [[ $CONFIG_HASH_2 != "$CONFIG_HASH" ]]; then
@@ -462,15 +462,17 @@ function update_test() {
     return 1;
   fi
 
-  if [ -f  /tests/libupdate/libupdate ]; then
+  if [ -f /tests/libupdate/libupdate ]; then
     echo "Test failed: Dependency not removed"
-    return 1;
+    return 1
   fi
 
-  if [ ! -f  /tests/libupdatenew/libupdatenew ]; then
+  if [ ! -f /tests/libupdatenew/libupdatenew ]; then
     echo "Test failed: New dependency not installed"
-    return 1;
+    return 1
   fi
+  echo "tests passed"
+  return 0
 
 }
 function remove_test() {
