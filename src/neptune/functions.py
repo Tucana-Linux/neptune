@@ -52,12 +52,12 @@ def check_online():
 def generate_file_list(package):
     os.chdir(f'{cache_dir}/{package}')
     # This is a bash oneliner, I know it isn't ideal but it's easier to read than the python alternative
-    subprocess.run(f'find * -type f | sed \'s|^|/|g\' > {lib_dir}/file_lists/{package}.list', shell=True)
+    subprocess.run(f'find * -type f | sed \'s|^|/|g\' > {lib_dir}/file-lists/{package}.list', shell=True)
     # Remove the files that need to be backed up from the file-list so that they aren't removed
     backup=parse_backup_file(package)
     if not len(backup) == 0:
        for file in backup:
-          subprocess.run(f'sed -i "\\@{file}@d" {lib_dir}/file_lists/{package}.list', shell=True)
+          subprocess.run(f'sed -i "\\@{file}@d" {lib_dir}/file-lists/{package}.list', shell=True)
     os.chdir(cache_dir)
 
 def postinst():
@@ -207,7 +207,7 @@ def remove_package(package):
    # Depend checking is handled in the remove.py file, this is actually removing the program
    # therefore use this function with caution
    try:
-      files = set(open(f"{lib_dir}/file_lists/{package}.list", "r").read().splitlines())
+      files = set(open(f"{lib_dir}/file-lists/{package}.list", "r").read().splitlines())
    except FileNotFoundError:
       print(f"File list for {package} not found, skipping removal")
       return
