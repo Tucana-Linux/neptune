@@ -462,12 +462,12 @@ function update_test() {
     return 1
   fi
 
-  if [ -f /tests/libupdate/libupdate ]; then
+  if [ -f $CHROOT/tests/libupdate/libupdate ]; then
     echo "Test failed: Dependency not removed"
     return 1
   fi
 
-  if [ ! -f /tests/libupdatenew/libupdatenew ]; then
+  if [ -f $CHROOT/tests/libupdatenew/libupdatenew ]; then
     echo "Test failed: New dependency not installed"
     return 1
   fi
