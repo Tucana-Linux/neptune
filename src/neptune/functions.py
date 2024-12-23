@@ -101,9 +101,11 @@ def update_files(package):
             try:
                with open('backup', 'r') as backup_file:
                   backup = [os.path.join(settings.install_path, line.rstrip()) for line in backup_file]
+                  continue
             except Exception as e:
                print(f"Error reading from backup file, aborting update for {package}")
                return
+            
 
          file_path = os.path.join(settings.install_path, os.path.join(root, file).lstrip('.'))
          # TODO Implement logging Rahul Chandra <rahul@tucanalinux.org>
