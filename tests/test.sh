@@ -435,6 +435,8 @@ function update_test() {
     return 1
   fi
   # We don't need to retest whether the depend was installed or not because that should've already been tested
+  # sleep so that it has a new date
+  sleep 4
   make_mock_package "update-test-root" "libupdatenew" "" "1"
   echo "option 1=new" > $CHROOT/tests/update-test-root/config.yaml
   CONFIG_HASH=$(sha256sum $CHROOT/tests/update-test-root/config.yaml)
