@@ -100,7 +100,6 @@ def update_files(package):
       for dir_name in dirs:
          folder_path = os.path.join(settings.install_path, os.path.join(root, dir_name).lstrip('.'))
          os.makedirs(folder_path, exist_ok=True)
-      backup = []
       for file in files:
          if file in ('postinst', 'depends'):
             continue
