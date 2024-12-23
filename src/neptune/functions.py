@@ -110,6 +110,7 @@ def update_files(package):
          print(backup)
          print(file_path)
          if file_path not in backup:
+            print("BACKUP ENGAGED")
             subprocess.run(f'mv {os.path.join(root, file)} {file_path}', shell=True)
    os.chdir(cache_dir)
 
