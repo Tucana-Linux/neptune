@@ -424,6 +424,7 @@ function update_test() {
   # 2) remove libupdate
   # 3) Install libupdatenew
   # 4) Not error
+  cp $CHROOT/var/cache/mercury/sha256 $CHROOT/var/cache/mercury/current
 
   make_mock_package "update-test-root" "libupdate" "" "1"
   make_mock_package "libupdate" "" "" ""
