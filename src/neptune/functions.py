@@ -97,10 +97,10 @@ def update_files(package):
       for file in files:
          if file in ('postinst', 'depends'):
             continue
-         if file == "backup":
+         if file == 'backup':
             try:
                with open('backup', 'r') as backup_file:
-                  backup = [line.rstrip() for line in backup_file]
+                  backup = [os.path.join(settings.install_path, line.rstrip()) for line in backup_file]
             except Exception as e:
                print(f"Error reading from backup file, aborting update for {package}")
                return
