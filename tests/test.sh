@@ -459,7 +459,7 @@ function update_test() {
 
   if [[ $CONFIG_HASH_2 != "$CONFIG_HASH" ]]; then
     echo "Test failed: Config file was modified"
-    return 1;
+    return 1
   fi
 
   if [ -f /tests/libupdate/libupdate ]; then
