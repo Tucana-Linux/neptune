@@ -206,7 +206,7 @@ def remove_package(package):
    print(f"Removing {package}")
    for file in files:
       # os/subprocesses remove function will crash the system if it's removing something that is currently in use
-      check_for_and_delete(f'{settings.install_path}/{file}', shell=True)
+      check_for_and_delete(f'{settings.install_path}/{file}')
    # Sed's are easier to understand
    # it's removed from wanted in remove.py
    subprocess.run(f"sed -i '/{package}/d' {settings.install_path}/etc/installed_package" , shell=True)
