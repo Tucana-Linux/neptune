@@ -5,7 +5,7 @@ import os
 from neptune import functions
 
 def calculate_removed_dependencies(packages_to_remove):
-   future_wanted_packages = set(open(f"{functions.settings.install_path}/etc/wanted_packages", "r").read().splitlines())
+   future_wanted_packages = set(open(f"{functions.settings.install_path}/{functions.lib_dir}/wanted_packages", "r").read().splitlines())
    for package in packages_to_remove:
       future_wanted_packages.remove(package)
    depends_of_wanted_packages = functions.get_depends(future_wanted_packages, False)
@@ -17,7 +17,7 @@ def remove():
       print("Usage: neptune-remove {{PACKAGES}}") 
       sys.exit(1)
    # Only remove wanted packages
-   wanted_packages = set(open(f"{functions.settings.install_path}/etc/wanted_packages", "r").read().splitlines())
+   wanted_packages = set(open(f"{functions.settings.install_path}/{functions.lib_dir}/wanted_packages", "r").read().splitlines())
    for package in functions.arguments:
       if not (package in functions.installed_packages):
          print(f"{package} is not installed")
@@ -33,4 +33,4 @@ def remove():
          print("Aborting")
          sys.exit(0)
    functions.remove_packages(to_remove)
-   subprocess.run(f"sed -i '/{package}/d' {functions.settings.install_path}/etc/wanted_packages", shell=True)
+   subprocess.run(f"sed -i '/{package}/d' {functions.settings.install_path}/{functions.lib_dir}/wanted_packages", shell=True)

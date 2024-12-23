@@ -24,7 +24,7 @@ def install():
    functions.install_packages(functions.packages, "install")
 
    for package in functions.arguments:
-      with open(f'{functions.settings.install_path}/etc/wanted_packages', 'a') as wanted_packages:
+      with open(f'{functions.settings.install_path}/{functions.lib_dir}/wanted_packages', 'a') as wanted_packages:
          # you cannot upgrade base
          if package != "base":
             wanted_packages.write(package + "\n")

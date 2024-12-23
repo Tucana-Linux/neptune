@@ -52,12 +52,12 @@ def check_online():
 def generate_file_list(package):
     os.chdir(f'{cache_dir}/{package}')
     # This is a bash oneliner, I know it isn't ideal but it's easier to read than the python alternative
-    subprocess.run(f'find * -type f | sed \'s|^|/|g\' > {cache_dir}/file-lists/{package}.list', shell=True)
+    subprocess.run(f'find * -type f | sed \'s|^|/|g\' > {lib_dir}/file_lists/{package}.list', shell=True)
     # Remove the files that need to be backed up from the file-list so that they aren't removed
     backup=parse_backup_file(package)
     if not len(backup) == 0:
        for file in backup:
-          subprocess.run(f'sed -i "\\@{file}@d" {cache_dir}/file-lists/{package}.list', shell=True)
+          subprocess.run(f'sed -i "\\@{file}@d" {lib_dir}/file_lists/{package}.list', shell=True)
     os.chdir(cache_dir)
 
 def postinst():
@@ -143,9 +143,9 @@ def install_package(package, operation, reinstalling=False):
       subprocess.run(f'cp {package}/postinst /tmp/{package}-postinst', shell=True)
    if not reinstalling:
       if package != "base":
-         open(f'{settings.install_path}/etc/installed_package', 'a').write(package + "\n")
+         open(f'{settings.install_path}/{lib_dir}/installed_package', 'a').write(package + "\n")
       else:
-         open(f'{settings.install_path}/etc/installed_package', 'a').write("base-update\n")
+         open(f'{settings.install_path}/{lib_dir}/installed_package', 'a').write("base-update\n")
    print("Removing Cache")
    subprocess.run(f'rm -rf {package}', shell=True)
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)
@@ -194,9 +194,9 @@ def recalculate_system_depends():
       if not (package in available_packages):
          print(f"{package} no longer exists")
          remove.append(package)
-         subprocess.run(f'sed -i \'/{package}/d\' {settings.install_path}/etc/wanted_packages', shell=True)
+         subprocess.run(f'sed -i \'/{package}/d\' {settings.install_path}/{lib_dir}/wanted_packages', shell=True)
    # this isn't global because sync doesn't create this file
-   wanted_packages = set(open(f"{settings.install_path}/etc/wanted_packages", "r").read().splitlines())
+   wanted_packages = set(open(f"{settings.install_path}/{lib_dir}/wanted_packages", "r").read().splitlines())
    depends_of_wanted_packages = get_depends(wanted_packages, check_installed=False)
 
    install = [pkg for pkg in depends_of_wanted_packages if pkg not in installed_packages]
@@ -207,7 +207,7 @@ def remove_package(package):
    # Depend checking is handled in the remove.py file, this is actually removing the program
    # therefore use this function with caution
    try:
-      files = set(open(f"{cache_dir}/file-lists/{package}.list", "r").read().splitlines())
+      files = set(open(f"{lib_dir}/file_lists/{package}.list", "r").read().splitlines())
    except FileNotFoundError:
       print(f"File list for {package} not found, skipping removal")
       return
@@ -217,7 +217,7 @@ def remove_package(package):
       check_for_and_delete(f'{settings.install_path}/{file}')
    # Sed's are easier to understand
    # it's removed from wanted in remove.py
-   subprocess.run(f"sed -i '/{package}/d' {settings.install_path}/etc/installed_package" , shell=True)
+   subprocess.run(f"sed -i '/{package}/d' {settings.install_path}/{lib_dir}/installed_package" , shell=True)
 
 def remove_packages(packages):
    for package in packages:

@@ -3,15 +3,15 @@ import subprocess
 import sys
 import os
 import requests
-from neptune import functions
-from neptune import sync
+from neptune.functions import functions
+from neptune.sync import sync
 
 
 arguments = list(sys.argv)
 arguments.pop(0)
 path = ""
 cache_dir = ""
-
+lib_dir = ""
 yes_mode = False
 def parse_arguments():
   valid_cli_arguments = ["--y"]
@@ -31,12 +31,12 @@ def parse_arguments():
     if valid_cli_arguments[arg] in arguments:
       cooresponding[arg] = True
       # How many packages could you possibly pass? probably fine to use remove
-      arguments.remove(cooresponding[arg])
+      arguments.remove(valid_cli_arguments[arg])
 
 def generate_file_list(package):
     os.chdir(f'{cache_dir}/{package}')
     # This is a bash oneliner, I know it isn't ideal but it's easier to read than the python alternative
-    subprocess.run(f'find * -type f | sed \'s|^|/|g\' > {cache_dir}/file-lists/{package}.list', shell=True)
+    subprocess.run(f'find * -type f | sed \'s|^|/|g\' > {lib_dir}/file-lists/{package}.list', shell=True)
     os.chdir(cache_dir)
 def check_for_and_delete(path_to_delete):
    if os.path.exists(path_to_delete):
@@ -79,9 +79,9 @@ def install_package(package):
    copy_files(package)
    
    if package != "base":
-      open(f'{path}/etc/installed_package', 'a').write(package + "\n")
+      open(f'{path}/{lib_dir}/installed_package', 'a').write(package + "\n")
    else:
-      open(f'{path}/etc/installed_package', 'a').write("base-update\n")
+      open(f'{path}/{lib_dir}/installed_package', 'a').write("base-update\n")
    print("Removing Cache")
    subprocess.run(f'rm -rf {package}', shell=True)
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)
@@ -92,7 +92,7 @@ def install_packages(packages):
 
 def create_inital_files():
    os.makedirs(cache_dir)
-   os.makedirs(f'{cache_dir}/file-lists')
+   os.makedirs(f'{lib_dir}/file-lists')
    os.makedirs(f'{cache_dir}/depend')
    try: 
       sha256 = requests.get(f'{functions.repo}/available-packages/sha256', allow_redirects=True)
@@ -111,8 +111,11 @@ def bootstrap():
       print("This directory is not empty!")
       sys.exit(1)
    global cache_dir
-   cache_dir = f'{path}/var/cache/mercury'
+   global lib_dir
+   lib_dir = f'{path}/var/lib/neptune'
+   cache_dir = f'{path}/{lib_dir}/cache'
    print("Syncing")
+
    sync()
    create_inital_files()
 
@@ -125,5 +128,5 @@ def bootstrap():
          print("Aborting")
          sys.exit(0)
    install_packages(packages)
-   open(f'{path}/etc/wanted_package', 'a').write("base-update\n")
+   open(f'{path}/{lib_dir}/wanted_package', 'a').write("base-update\n")
 

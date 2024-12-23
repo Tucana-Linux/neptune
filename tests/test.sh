@@ -61,9 +61,12 @@ function chroot_setup() {
   # TODO Change to /var/lib/neptune once neptune is finalized Rahul Chandra <rahul@tucanalinux.org>
   mkdir -p $CHROOT/var/lib/neptune/file-lists
   chroot $CHROOT /bin/bash -c "mercury-install --y python-urllib3 python-requests pyyaml"
+  # make inital directories like neptune bootstrap would, or the final install ig
+  mkdir -p $CHROOT/var/lib/neptune/{file-lists, cache}
+  mkdir -p $CHROOT/var/lib/neptune/cache/depend
   # remove the installed_package so it can be fresh neptune
-  rm $CHROOT/etc/installed_package
-  touch $CHROOT/etc/installed_package
+  rm -f $CHROOT//var/lib/neptune/installed_package
+  touch $CHROOT//var/lib/neptune/installed_package
 }
 
 function setup() {
@@ -310,11 +313,11 @@ function install_test_no_depends() {
     echo "Installation did not install the file list"
     return 1
   fi
-  if ! cat $CHROOT/etc/installed_package | grep install-test; then
+  if ! cat $CHROOT//var/lib/neptune/installed_package | grep install-test; then
     echo "Package not in installed_package"
     return 1
   fi
-  if ! cat $CHROOT/etc/wanted_packages | grep install-test; then
+  if ! cat $CHROOT/var/lib/neptune/wanted_packages | grep install-test; then
     echo "Package not in wanted_packages"
     return 1
   fi
@@ -332,11 +335,11 @@ function install_test_with_depends() {
     echo "Neptune exited with error code $?"
     return 1
   fi
-  if ! cat $CHROOT/etc/installed_package | grep libtest; then
+  if ! cat $CHROOT//var/lib/neptune/installed_package | grep libtest; then
     echo "Depend not in installed_package"
     return 1
   fi
-  if cat $CHROOT/etc/wanted_packages | grep libtest; then
+  if cat $CHROOT/var/lib/neptune/wanted_packages | grep libtest; then
     echo "Depend is wrongly in wanted_packages"
     return 1
   fi
@@ -503,17 +506,17 @@ function remove_test() {
   fi
   
   # Check if installed package has been updated
-  if cat $CHROOT/etc/installed_package | grep "remove-test"; then
+  if cat $CHROOT//var/lib/neptune/installed_package | grep "remove-test"; then
     echo "Test failed: remove-test is still listed in installed_package after removal"
     return 1
   fi
 
-  if cat $CHROOT/etc/installed_package | grep "remove-test-depend"; then
+  if cat $CHROOT//var/lib/neptune/installed_package | grep "remove-test-depend"; then
     echo "Test failed: remove-test-depend is still listed in installed_package after removal"
     return 1
   fi
 
-  if cat $CHROOT/etc/wanted_packages | grep "remove-test"; then
+  if cat $CHROOT/var/lib/neptune/wanted_packages | grep "remove-test"; then
     echo "Test failed: remove-test is still listed in wanted_packages after removal"
     return 1
   fi

@@ -9,7 +9,7 @@ Update Block
 '''
 def check_for_updates():
    # This is almost directly refactored from mercury
-   diff_command = subprocess.run(f"diff {functions.cache_dir}/current {functions.cache_dir}/sha256", shell=True, capture_output=True, text=True)
+   diff_command = subprocess.run(f"diff {functions.lib_dir}/current {functions.cache_dir}/sha256", shell=True, capture_output=True, text=True)
    # Cursed python array syntax, removes .tar.xz from packages and checks the output of diff
    # to see which ones are different
    updates = [
@@ -46,5 +46,5 @@ def update():
    functions.install_packages(updates, "other")
    if len(remove) > 0:
     functions.remove_packages(remove)
-   subprocess.run(f"cp {functions.cache_dir}/sha256 {functions.cache_dir}/current", shell=True)
+   subprocess.run(f"cp {functions.cache_dir}/sha256 {functions.lib_dir}/current", shell=True)
    
