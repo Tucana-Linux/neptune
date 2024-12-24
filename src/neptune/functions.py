@@ -3,6 +3,7 @@ import subprocess
 import sys
 import os
 import requests
+from tqdm import tqdm
 
 from neptune.settings import NeptuneSettings
 
@@ -65,13 +66,17 @@ def postinst():
       print(f"Running {package} post-install")
       subprocess.run(f"bash /tmp/{package}-postinst", shell=True)
       subprocess.run(f'rm -f /tmp/{package}-postinst', shell=True)
+
 def download_link(link, output_path):
    try:
       download = requests.get(link, stream=True)
+      progress_bar = tqdm(total=download.headers.get('content-length', 0), unit='B', unit_scale=True, desc=f"Downloading {link}")
       with open(output_path, 'wb') as file:
          # use streams as these can get big
          for chunk in download.iter_content(chunk_size=settings.stream_chunk_size):
             file.write(chunk)
+            progress_bar.update(len(chunk))
+      progress_bar.close()
    except requests.RequestException as e:
       print(f"Failed to download {link}, you have likely lost internet, error: {e}")
       subprocess.run(f"rm -f {output_path}")
@@ -151,8 +156,11 @@ def install_package(package, operation, reinstalling=False):
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)
 
 def install_packages(packages, operation, reinstalling=False):
+   progress_bar = tqdm(total=len(packages), desc="Installing Packages", bar_format='{l_bar}{bar} | {n_fmt}/{total_fmt}')
    for package in packages:
       install_package(package, operation, reinstalling)
+      progress_bar.update(1)
+   progress_bar.close()
    postinst()
 
 def check_if_packages_exist(packages):
@@ -220,8 +228,11 @@ def remove_package(package):
    subprocess.run(f"sed -i '/{package}/d' {settings.install_path}/{lib_dir}/installed_package" , shell=True)
 
 def remove_packages(packages):
+   progress_bar = tqdm(total=len(packages), desc="Removing Packages", bar_format='{l_bar}{bar} | {n_fmt}/{total_fmt}')
    for package in packages:
       remove_package(package)
+      progress_bar.update(1)
+   progress_bar.close()
 
 
 

@@ -2,7 +2,7 @@
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 [project]
-dependencies=["requests", "PyYAML"]
+dependencies=["requests", "PyYAML", "tqdm"]
 name = "neptune"
 version = "0.0.2"
 authors = [
