@@ -77,7 +77,7 @@ def postinst():
 def download_link(link, output_path):
    try:
       download = requests.get(link, stream=True)
-      progress_bar = tqdm(total=int(download.headers.get('content-length', 0)), unit='B', unit_scale=True)
+      progress_bar = tqdm(total=int(download.headers.get('content-length', 0)), position=0, leave=True, unit='B', unit_scale=True)
       with open(output_path, 'wb') as file:
          # use streams as these can get big
          for chunk in download.iter_content(chunk_size=settings.stream_chunk_size):
