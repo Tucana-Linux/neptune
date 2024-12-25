@@ -70,7 +70,7 @@ def postinst():
 def download_link(link, output_path):
    try:
       download = requests.get(link, stream=True)
-      progress_bar = tqdm(total=download.headers.get('content-length', 0), unit='B', unit_scale=True, desc=f"Downloading {link}")
+      progress_bar = tqdm(total=int(download.headers.get('content-length', 0)), unit='B', unit_scale=True, desc=f"Downloading {link}")
       with open(output_path, 'wb') as file:
          # use streams as these can get big
          for chunk in download.iter_content(chunk_size=settings.stream_chunk_size):
@@ -133,7 +133,7 @@ def install_package(package, operation, reinstalling=False):
    print(f"Extracting {package}")
    subprocess.run(f'tar -xpf {package}.tar.xz', shell=True)
 
-   print(f"Generating File List for {package}")
+   #print(f"Generating File List for {package}")
    generate_file_list(package)
 
    print("Installing files")
