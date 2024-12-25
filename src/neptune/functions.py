@@ -1,9 +1,10 @@
 #!/bin/python3
+import shutil
 import subprocess
 import sys
 import os
 import requests
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from neptune.settings import NeptuneSettings
 
@@ -11,8 +12,14 @@ if os.geteuid() != 0:
    print("This package manager must be run as root")
    sys.exit()
 
-settings = NeptuneSettings()
+# Get terminal rows to know how many packages to print at once
+rows, _ = shutil.get_terminal_size()
 
+settings = NeptuneSettings()
+# ANSI Codes
+move_up_one='\033[A'
+return_b = '\r'
+clear='\033[K'
 # Global vars
 lib_dir = f'{settings.install_path}/var/lib/neptune'
 cache_dir = f'{settings.install_path}/{lib_dir}/cache'
@@ -70,7 +77,7 @@ def postinst():
 def download_link(link, output_path):
    try:
       download = requests.get(link, stream=True)
-      progress_bar = tqdm(total=int(download.headers.get('content-length', 0)), unit='B', unit_scale=True, desc=f"Downloading {link}")
+      progress_bar = tqdm(total=int(download.headers.get('content-length', 0)), unit='B', unit_scale=True)
       with open(output_path, 'wb') as file:
          # use streams as these can get big
          for chunk in download.iter_content(chunk_size=settings.stream_chunk_size):
@@ -78,12 +85,14 @@ def download_link(link, output_path):
             progress_bar.update(len(chunk))
       progress_bar.close()
    except requests.RequestException as e:
+      # TODO Fix for progress bars <rahul@tucanalinux.org>
       print(f"Failed to download {link}, you have likely lost internet, error: {e}")
       subprocess.run(f"rm -f {output_path}")
       sys.exit(1)
 
 def download_package(package):
-   print(f"Downloading {package}")
+   # We don't want a new line for the progress bar.
+   print(f"[#] {package}     Downloading", end="")
    download_link(f'{settings.repo}/packages/{package}.tar.xz', f'{cache_dir}/{package}.tar.xz')
    
 def check_for_and_delete(path_to_delete):
@@ -127,16 +136,17 @@ def install_package(package, operation, reinstalling=False):
    if not os.path.exists(cache_dir):
       os.makedirs(cache_dir)
    os.chdir(cache_dir)
-   
+    
+   print(f"{return_b}{clear}", end="")
    download_package(package)
 
-   print(f"Extracting {package}")
+   print(f"{move_up_one}{return_b}{clear}[#] {package}    Extracting")
    subprocess.run(f'tar -xpf {package}.tar.xz', shell=True)
 
    #print(f"Generating File List for {package}")
    generate_file_list(package)
 
-   print("Installing files")
+   print(f"{move_up_one}{return_b}{clear}[#] {package}    Installing")
    match operation:
       case "install":
          copy_files(package)
@@ -151,15 +161,15 @@ def install_package(package, operation, reinstalling=False):
          open(f'{settings.install_path}/{lib_dir}/installed_package', 'a').write(package + "\n")
       else:
          open(f'{settings.install_path}/{lib_dir}/installed_package', 'a').write("base-update\n")
-   print("Removing Cache")
    subprocess.run(f'rm -rf {package}', shell=True)
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)
+   print(f"{move_up_one}{return_b}{clear}[#] {package}    Done")
 
-def install_packages(packages, operation, reinstalling=False):
+def install_packages(packages, operation, reinstalling=False, rows=10):
+   print("[#] Package    Status")
    progress_bar = tqdm(total=len(packages), desc="Installing Packages", bar_format='{l_bar}{bar} | {n_fmt}/{total_fmt}')
    for package in packages:
       install_package(package, operation, reinstalling)
-      progress_bar.update(1)
    progress_bar.close()
    postinst()
 
