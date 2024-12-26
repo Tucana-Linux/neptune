@@ -4,9 +4,13 @@ import subprocess
 import sys
 import os
 import requests
-from tqdm.auto import tqdm
-
+from rich.table import Column
+from rich.console import Console, Group
+from rich.panel import Panel
+from rich.live import Live
+from rich.progress import Progress, BarColumn, TextColumn
 from neptune.settings import NeptuneSettings
+
 
 if os.geteuid() != 0:
    print("This package manager must be run as root")
@@ -74,26 +78,37 @@ def postinst():
       subprocess.run(f"bash /tmp/{package}-postinst", shell=True)
       subprocess.run(f'rm -f /tmp/{package}-postinst', shell=True)
 
-def download_link(link, output_path):
+def download_link(link, output_path, package=None, console_line=None):
+   def make_progress_bar(progress, total, width=20):
+      filled_length = int(width * progress / total)
+      # i love you python string concatonation
+      bar = '#' * filled_length + ' ' * (width - filled_length)
+      percent = progress / total * 100
+      return rf"\[{bar}\] {percent:.1f}%"
+   if package != None:
+      link = f'{settings.repo}/packages/{package}.tar.xz'
+      output_path = f'{cache_dir}/{package}.tar.xz'
    try:
       download = requests.get(link, stream=True)
-      progress_bar = tqdm(total=int(download.headers.get('content-length', 0)), position=0, leave=True, unit='B', unit_scale=True)
+      downloaded_progress = 0
+
       with open(output_path, 'wb') as file:
-         # use streams as these can get big
-         for chunk in download.iter_content(chunk_size=settings.stream_chunk_size):
-            file.write(chunk)
-            progress_bar.update(len(chunk))
-      progress_bar.close()
+         # performance so you don't check this on every chunk
+         if console_line is not None:
+            for chunk in download.iter_content(chunk_size=settings.stream_chunk_size):
+               downloaded_progress += len(chunk)
+               bar = make_progress_bar(downloaded_progress, int(download.headers.get('content-length', 0)))
+               console_line.update(f"{package} Downloading {bar}")
+               file.write(chunk)
+         else:
+            for chunk in download.iter_content(chunk_size=settings.stream_chunk_size):
+               file.write(chunk)
+            #progress.update(download_task, advance=len(chunk))
    except requests.RequestException as e:
       # TODO Fix for progress bars <rahul@tucanalinux.org>
       print(f"Failed to download {link}, you have likely lost internet, error: {e}")
       subprocess.run(f"rm -f {output_path}")
       sys.exit(1)
-
-def download_package(package):
-   # We don't want a new line for the progress bar.
-   print(f"[#] {package}     Downloading", end="")
-   download_link(f'{settings.repo}/packages/{package}.tar.xz', f'{cache_dir}/{package}.tar.xz')
    
 def check_for_and_delete(path_to_delete):
    # in case more logic is needed later
@@ -132,21 +147,21 @@ def update_files(package):
             subprocess.run(f'mv {os.path.join(root, file)} {file_path}', shell=True)
    os.chdir(cache_dir)
 
-def install_package(package, operation, reinstalling=False):
+def install_package(package, operation, reinstalling=False, console_line=None):
    if not os.path.exists(cache_dir):
       os.makedirs(cache_dir)
    os.chdir(cache_dir)
-    
-   print(f"{return_b}{clear}", end="")
-   download_package(package)
 
-   print(f"{move_up_one}{return_b}{clear}[#] {package}    Extracting")
+   # we can leave the other one's blank since we are using a package
+   download_link("", "", package=package, console_line=console_line)
+
+   console_line.update(f"{package} Extracting...")
    subprocess.run(f'tar -xpf {package}.tar.xz', shell=True)
 
    #print(f"Generating File List for {package}")
    generate_file_list(package)
 
-   print(f"{move_up_one}{return_b}{clear}[#] {package}    Installing")
+   console_line.update(f"{package} Installing...")
    match operation:
       case "install":
          copy_files(package)
@@ -163,14 +178,31 @@ def install_package(package, operation, reinstalling=False):
          open(f'{settings.install_path}/{lib_dir}/installed_package', 'a').write("base-update\n")
    subprocess.run(f'rm -rf {package}', shell=True)
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)
-   print(f"{move_up_one}{return_b}{clear}[#] {package}    Done")
 
-def install_packages(packages, operation, reinstalling=False, rows=10):
-   print("[#] Package    Status")
-   progress_bar = tqdm(total=len(packages), desc="Installing Packages", bar_format='{l_bar}{bar} | {n_fmt}/{total_fmt}')
-   for package in packages:
-      install_package(package, operation, reinstalling)
-   progress_bar.close()
+def install_packages(packages, operation, reinstalling=False):
+   console = Console()
+   text_column = TextColumn("{task.description}", table_column=Column(ratio=1))
+   bar_column = BarColumn(bar_width=80, table_column=Column(ratio=5))
+   progress = Progress(text_column, bar_column, expand=True)
+   status_lines=[]
+   current_line = console.status("", refresh_per_second=10)
+   task = progress.add_task("Install Progress", total=len(packages))
+   rows = shutil.get_terminal_size().lines - 4
+
+   def get_status_group():
+        visible_lines = status_lines[-rows:] if len(status_lines) > rows else status_lines
+        return Group(
+            *visible_lines,  # All completed package lines
+            current_line,   # Current operation line
+            progress       # Progress bar at bottom
+         )
+
+   with Live(get_status_group(), refresh_per_second=10, console=console) as live:
+      for package in packages:
+         install_package(package, operation, reinstalling, console_line=current_line)
+         status_lines.append(rf" {package} \[[bold blue]✔[/bold blue]\]")
+         progress.update(task, advance=1)
+         live.update(get_status_group())
    postinst()
 
 def check_if_packages_exist(packages):
@@ -238,11 +270,13 @@ def remove_package(package):
    subprocess.run(f"sed -i '/{package}/d' {settings.install_path}/{lib_dir}/installed_package" , shell=True)
 
 def remove_packages(packages):
-   progress_bar = tqdm(total=len(packages), desc="Removing Packages", bar_format='{l_bar}{bar} | {n_fmt}/{total_fmt}')
-   for package in packages:
-      remove_package(package)
-      progress_bar.update(1)
-   progress_bar.close()
+   text_column = TextColumn("{task.description}", table_column=Column(ratio=1))
+   bar_column = BarColumn(bar_width=80, table_column=Column(ratio=5))
+   with Progress(text_column, bar_column, expand=True) as progress:
+      remove_task = progress.add_task('[red]Removing...', total=len(packages))
+      for package in packages:
+         remove_package(package)
+         progress.update(remove_task, advance=1)
 
 
 
