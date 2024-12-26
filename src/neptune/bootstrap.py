@@ -126,9 +126,9 @@ def create_inital_files():
 
 def bootstrap():
    # This is a complete reimplmentation, neptune main never gets called here.
-   functions.check_online()
    parse_config()
    parse_arguments()
+   functions.check_online()
    if not os.listdir(path) == []:
       print("This directory is not empty!")
       sys.exit(1)
