@@ -115,7 +115,7 @@ def bootstrap():
    global cache_dir
    global lib_dir
    lib_dir = f'{path}/var/lib/neptune'
-   cache_dir = f'{path}/{lib_dir}/cache'
+   cache_dir = f'{lib_dir}/cache'
    print("Syncing")
 
    sync()
