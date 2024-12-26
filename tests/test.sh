@@ -60,7 +60,7 @@ function chroot_setup() {
 
   # TODO Change to /var/lib/neptune once neptune is finalized Rahul Chandra <rahul@tucanalinux.org>
   mkdir -p $CHROOT/var/lib/neptune/file-lists
-  chroot $CHROOT /bin/bash -c "mercury-install --y python-urllib3 python-requests pyyaml"
+  chroot $CHROOT /bin/bash -c "mercury-install --y python-urllib3 python-requests pyyaml python-rich"
   # make inital directories like neptune bootstrap would, or the final install ig
   mkdir -p $CHROOT/var/lib/neptune/{file-lists,cache}
   mkdir -p $CHROOT/var/lib/neptune/cache/depend

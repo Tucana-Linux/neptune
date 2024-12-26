@@ -182,11 +182,11 @@ def install_package(package, operation, reinstalling=False, console_line=None):
 def install_packages(packages, operation, reinstalling=False):
    console = Console()
    text_column = TextColumn("{task.description}", table_column=Column(ratio=1))
-   bar_column = BarColumn(bar_width=80, table_column=Column(ratio=5))
+   bar_column = BarColumn(bar_width=None, table_column=Column(ratio=5))
    progress = Progress(text_column, bar_column, expand=True)
    status_lines=[]
    current_line = console.status("", refresh_per_second=10)
-   task = progress.add_task("Install Progress", total=len(packages))
+   task = progress.add_task("Installing", total=len(packages))
    rows = shutil.get_terminal_size().lines - 4
 
    def get_status_group():
