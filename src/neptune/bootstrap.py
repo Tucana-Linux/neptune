@@ -51,7 +51,6 @@ def parse_arguments():
   for arg in range(len(valid_cli_arguments)):
     if valid_cli_arguments[arg] in arguments:
       cooresponding[arg] = True
-      # How many packages could you possibly pass? probably fine to use remove
       arguments.remove(valid_cli_arguments[arg])
 
 def generate_file_list(package):
@@ -123,12 +122,22 @@ def create_inital_files():
       sys.exit(1)
    subprocess.run(f'cp {cache_dir}/current {cache_dir}/sha256', shell=True)
 
+def check_online():
+   try:
+      check_file = requests.head(f'{repo}/available-packages/sha256')
+      if check_file.status_code != requests.codes.ok:
+         print("This does not seem to be a Tucana repo server")
+         sys.exit(1)
+   except requests.RequestException as e:
+      print(f"Error connecting to repo server: {e}")
+      sys.exit(1)
+
 
 def bootstrap():
    # This is a complete reimplmentation, neptune main never gets called here.
    parse_config()
    parse_arguments()
-   functions.check_online()
+   check_online()
    if not os.listdir(path) == []:
       print("This directory is not empty!")
       sys.exit(1)

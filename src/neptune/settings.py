@@ -13,7 +13,8 @@ class NeptuneSettings:
     def init(self):
         #print("Reinitalizing")
         self.repo = ""
-        self.install_path = ""
+        # TODO Consider removing this
+        self.install_path = "/"
         self.yes_mode = False
         self.no_depend_mode = False
         self.stream_chunk_size = 8192
