@@ -84,7 +84,7 @@ def download_link(link, output_path, package=None, console_line=None):
       # i love you python string concatonation
       bar = '#' * filled_length + ' ' * (width - filled_length)
       percent = progress / total * 100
-      return rf"\[{bar}\] {percent:.1f}%"
+      return rf"\[{bar}] {percent:.1f}%"
    if package != None:
       link = f'{settings.repo}/packages/{package}.tar.xz'
       output_path = f'{cache_dir}/{package}.tar.xz'
