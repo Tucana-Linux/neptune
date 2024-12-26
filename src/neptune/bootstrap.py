@@ -97,7 +97,9 @@ def create_inital_files():
    os.makedirs(f'{cache_dir}/depend')
    try: 
       sha256 = requests.get(f'{functions.settings.repo}/available-packages/sha256', allow_redirects=True)
+      available_packages = requests.get(f'{functions.settings.repo}/available-packages/available-packages', allow_redirects=True)
       open(f'{lib_dir}/current', 'wb').write(sha256.content)
+      open(f'{cache_dir}/available-packages', 'wb').write(available_packages.content)
    except:
       print("Error retreiving files from the repository is it online?")
       sys.exit(1)
