@@ -32,8 +32,13 @@ def parse_arguments():
   arguments.pop(0)
   for arg in range(len(valid_cli_arguments)):
     if valid_cli_arguments[arg] in arguments:
-      cooresponding[arg] = True
-      arguments.remove(valid_cli_arguments[arg])
+      match arg:
+               case 0:
+                  functions.settings.yes_mode = True
+               case 1:
+                  functions.settings.no_depend_mode = True
+            # How many packages could you possibly pass? probably fine to use remove
+      functions.arguments.remove(valid_cli_arguments[arg])
 
 def generate_file_list(package):
     os.chdir(f'{cache_dir}/{package}')
@@ -77,11 +82,7 @@ def install_package(package):
 
    print("Installing files")
    copy_files(package)
-   
-   if package != "base":
-      open(f'{path}/{lib_dir}/installed_package', 'a').write(package + "\n")
-   else:
-      open(f'{path}/{lib_dir}/installed_package', 'a').write("base-update\n")
+   open(f'{path}/{lib_dir}/installed_package', 'a').write(package + "\n")
    print("Removing Cache")
    subprocess.run(f'rm -rf {package}', shell=True)
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)
@@ -96,11 +97,11 @@ def create_inital_files():
    os.makedirs(f'{cache_dir}/depend')
    try: 
       sha256 = requests.get(f'{functions.settings.repo}/available-packages/sha256', allow_redirects=True)
-      open(f'{cache_dir}/current', 'wb').write(sha256.content)
+      open(f'{lib_dir}/current', 'wb').write(sha256.content)
    except:
       print("Error retreiving files from the repository is it online?")
       sys.exit(1)
-   subprocess.run(f'cp {cache_dir}/current {cache_dir}/sha256', shell=True)
+   subprocess.run(f'cp {lib_dir}/current {cache_dir}/sha256', shell=True)
 
 
 def bootstrap():
@@ -129,5 +130,5 @@ def bootstrap():
          print("Aborting")
          sys.exit(0)
    install_packages(packages)
-   open(f'{path}/{lib_dir}/wanted_package', 'a').write("base-update\n")
+   open(f'{path}/{lib_dir}/wanted_packages', 'a').write("base-update\n")
 
