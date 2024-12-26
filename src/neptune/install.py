@@ -19,3 +19,7 @@ def install():
          print("Aborting")
          sys.exit(0)
    functions.install_packages(functions.packages, "install")
+   for package in functions.arguments:
+      with open(f'{functions.lib_dir}/wanted_packages', 'a') as wanted_packages:
+         # you cannot upgrade base
+         wanted_packages.write(package + "\n")
