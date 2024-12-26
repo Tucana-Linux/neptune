@@ -82,7 +82,7 @@ def install_package(package):
 
    print("Installing files")
    copy_files(package)
-   open(f'{path}/{lib_dir}/installed_package', 'a').write(package + "\n")
+   open(f'{lib_dir}/installed_package', 'a').write(package + "\n")
    print("Removing Cache")
    subprocess.run(f'rm -rf {package}', shell=True)
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)
