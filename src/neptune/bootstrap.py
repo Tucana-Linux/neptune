@@ -3,7 +3,7 @@ import subprocess
 import sys
 import os
 import requests
-from neptune.functions import functions
+import neptune.functions as functions
 from neptune.sync import sync
 
 
