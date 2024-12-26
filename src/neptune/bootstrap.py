@@ -60,7 +60,7 @@ def download_link(link, output_path):
 
 def download_package(package):
    print(f"Downloading {package}")
-   download_link(f'{functions.repo}/packages/{package}.tar.xz', f'{cache_dir}/{package}.tar.xz')
+   download_link(f'{functions.settings.repo}/packages/{package}.tar.xz', f'{cache_dir}/{package}.tar.xz')
 
 def install_package(package):
    if not os.path.exists(cache_dir):
@@ -95,7 +95,7 @@ def create_inital_files():
    os.makedirs(f'{lib_dir}/file-lists')
    os.makedirs(f'{cache_dir}/depend')
    try: 
-      sha256 = requests.get(f'{functions.repo}/available-packages/sha256', allow_redirects=True)
+      sha256 = requests.get(f'{functions.settings.repo}/available-packages/sha256', allow_redirects=True)
       open(f'{cache_dir}/current', 'wb').write(sha256.content)
    except:
       print("Error retreiving files from the repository is it online?")
@@ -121,7 +121,7 @@ def bootstrap():
 
    print("Getting dependencies")
    packages=functions.get_depends(["base"], check_installed=False)
-   if not functions.yes_mode:
+   if not yes_mode:
       print(f"Packages to install: {" ".join(packages)}") 
       confirmation=input(f"You are about to bootstrap {path}, would you like to continue? [Y/n] ")
       if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
