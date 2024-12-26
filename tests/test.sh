@@ -26,17 +26,10 @@ function chroot_setup() {
   sleep 3  
   # Subset of the installer script, check there for explanations
   cd $TEMP_DIR || exit
-  git clone https://github.com/xXTeraXx/Tucana.git
-  # Change Install path and Repo
-  sed -i "s|INSTALL_PATH=.*|INSTALL_PATH=$CHROOT|g" Tucana/mercury/mercury-install
-  sed -i "s|INSTALL_PATH=.*|INSTALL_PATH=$CHROOT|g" Tucana/mercury/mercury-sync
-  sed -i "s|REPO=.*|REPO=$REPO|g" Tucana/mercury/mercury-install
-  sed -i "s|REPO=.*|REPO=$REPO|g" Tucana/mercury/mercury-sync
+
   
-  # Install the base system
-  cd Tucana/mercury || exit
-  ./mercury-sync
-  printf "y\n" | ./mercury-install base
+  neptune-boostrap $CHROOT --y
+  sed -i "s@\"http.*\"@\"${REPO}\"@" $CHROOT/etc/neptune/config.yaml
   
   # Mount temp filesystems
   mount --bind /dev $CHROOT/dev
@@ -58,16 +51,6 @@ function chroot_setup() {
   echo "en_US.UTF-8 UTF-8" > $CHROOT/etc/locale.gen
   chroot $CHROOT /bin/bash -c "locale-gen"
 
-  # TODO Change to /var/lib/neptune once neptune is finalized Rahul Chandra <rahul@tucanalinux.org>
-  mkdir -p $CHROOT/var/lib/neptune/file-lists
-  chroot $CHROOT /bin/bash -c "mercury-install --y python-urllib3 python-requests pyyaml python-rich"
-  # make inital directories like neptune bootstrap would, or the final install ig
-  mkdir -p $CHROOT/var/lib/neptune/{file-lists,cache}
-  mkdir -p $CHROOT/var/lib/neptune/cache/depend
-  # remove the installed_package so it can be fresh neptune
-  rm -f $CHROOT//var/lib/neptune/installed_package
-  touch $CHROOT//var/lib/neptune/installed_package
-  touch $CHROOT/var/lib/neptune/cache/available-packages
 }
 
 function setup() {
@@ -75,10 +58,11 @@ function setup() {
   cd $TEMP_DIR
   cd ..
   python3 -m build --wheel --skip-dependency-check
-  if ! python3 -m installer --destdir=$CHROOT  dist/*.whl; then
+  if ! python3 -m installer --destdir=$CHROOT/neptune-test dist/*.whl; then
     echo "SETUP FAILED!"
     exit 1
   fi
+  cp -rpv $CHROOT/neptune-test/* $CHROOT
   mkdir -p $CHROOT/etc/neptune
   cat > $CHROOT/etc/neptune/config.yaml << "EOF"
 repositories:
