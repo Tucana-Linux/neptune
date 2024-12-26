@@ -130,5 +130,4 @@ def bootstrap():
          print("Aborting")
          sys.exit(0)
    install_packages(packages)
-   open(f'{path}/{lib_dir}/wanted_packages', 'a').write("base-update\n")
 
