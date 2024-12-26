@@ -4,6 +4,7 @@ import sys
 import os
 import requests
 import yaml
+import neptune
 import neptune.functions as functions
 from neptune.sync import sync
 
@@ -14,29 +15,10 @@ arguments.pop(0)
 path = ""
 cache_dir = ""
 lib_dir = ""
-yes_mode = False
-repo = ""
-
-def parse_config():
-   try:
-      with open('/etc/neptune/config.yaml', 'r') as config_file:
-         try:
-            config= yaml.safe_load(config_file)
-         except yaml.YAMLError as e:
-            print(f"Error parsing yaml syntax {e}")
-   except Exception as e:
-      print(f"An unexpected error occured {e}")
-   try:
-      global repo
-      global yes_mode
-      repo = config['repositories'][0]
-      yes_mode = config['system-settings']['yes_mode_by_default']
-   except KeyError as e:
-      print(f"An unexpected value was found in {e}")
 
 def parse_arguments():
   valid_cli_arguments = ["--y"]
-  cooresponding = [yes_mode]
+  cooresponding = [functions.settings.yes_mode]
 
   if len(arguments) == 0:
      usage="""Usage: neptune-bootstrap [path] [flags]
@@ -58,13 +40,11 @@ def generate_file_list(package):
     # This is a bash oneliner, I know it isn't ideal but it's easier to read than the python alternative
     subprocess.run(f'find * -type f | sed \'s|^|/|g\' > {lib_dir}/file-lists/{package}.list', shell=True)
     os.chdir(cache_dir)
-def check_for_and_delete(path_to_delete):
-   if os.path.exists(path_to_delete):
-      subprocess.run(f'rm -f {path_to_delete}/', shell=True)
+
 def copy_files(package):
    subprocess.run(f'cp -rp {package}/* {path}', shell=True)
    for i in ['depends', 'depend', 'make-depend', 'make-depends', 'postinst', 'preinst', 'prerm', 'preupdate']:
-      check_for_and_delete(f'{path}/{i}')
+      functions.check_for_and_delete(f'{path}/{i}')
 
 def download_link(link, output_path):
    try:
@@ -80,7 +60,7 @@ def download_link(link, output_path):
 
 def download_package(package):
    print(f"Downloading {package}")
-   download_link(f'{repo}/packages/{package}.tar.xz', f'{cache_dir}/{package}.tar.xz')
+   download_link(f'{functions.settings.repo}/packages/{package}.tar.xz', f'{cache_dir}/{package}.tar.xz')
 
 def install_package(package):
    if not os.path.exists(cache_dir):
@@ -115,29 +95,19 @@ def create_inital_files():
    os.makedirs(f'{lib_dir}/file-lists')
    os.makedirs(f'{cache_dir}/depend')
    try: 
-      sha256 = requests.get(f'{repo}/available-packages/sha256', allow_redirects=True)
+      sha256 = requests.get(f'{functions.settings.repo}/available-packages/sha256', allow_redirects=True)
       open(f'{cache_dir}/current', 'wb').write(sha256.content)
    except:
       print("Error retreiving files from the repository is it online?")
       sys.exit(1)
    subprocess.run(f'cp {cache_dir}/current {cache_dir}/sha256', shell=True)
 
-def check_online():
-   try:
-      check_file = requests.head(f'{repo}/available-packages/sha256')
-      if check_file.status_code != requests.codes.ok:
-         print("This does not seem to be a Tucana repo server")
-         sys.exit(1)
-   except requests.RequestException as e:
-      print(f"Error connecting to repo server: {e}")
-      sys.exit(1)
-
 
 def bootstrap():
    # This is a complete reimplmentation, neptune main never gets called here.
-   parse_config()
+   neptune.parse_config()
    parse_arguments()
-   check_online()
+   functions.check_online()
    if not os.listdir(path) == []:
       print("This directory is not empty!")
       sys.exit(1)
@@ -152,7 +122,7 @@ def bootstrap():
 
    print("Getting dependencies")
    packages=functions.get_depends(["base"], check_installed=False)
-   if not yes_mode:
+   if not functions.settings.yes_mode:
       print(f"Packages to install: {" ".join(packages)}") 
       confirmation=input(f"You are about to bootstrap {path}, would you like to continue? [Y/n] ")
       if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
