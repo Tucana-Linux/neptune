@@ -172,10 +172,7 @@ def install_package(package, operation, reinstalling=False, console_line=None):
       postinstalls.append(package)
       subprocess.run(f'cp {package}/postinst /tmp/{package}-postinst', shell=True)
    if not reinstalling:
-      if package != "base":
-         open(f'{settings.install_path}/{lib_dir}/installed_package', 'a').write(package + "\n")
-      else:
-         open(f'{settings.install_path}/{lib_dir}/installed_package', 'a').write("base-update\n")
+      open(f'{settings.install_path}/{lib_dir}/installed_package', 'a').write(package + "\n")
    subprocess.run(f'rm -rf {package}', shell=True)
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)
 
