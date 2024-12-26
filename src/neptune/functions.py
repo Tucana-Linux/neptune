@@ -200,7 +200,7 @@ def install_packages(packages, operation, reinstalling=False):
    with Live(get_status_group(), refresh_per_second=10, console=console) as live:
       for package in packages:
          install_package(package, operation, reinstalling, console_line=current_line)
-         status_lines.append(rf" {package} \[[bold blue]✔[/bold blue]\]")
+         status_lines.append(rf" {package} \[[bold blue]✔[/bold blue]]")
          progress.update(task, advance=1)
          live.update(get_status_group())
    postinst()
