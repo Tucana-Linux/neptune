@@ -264,7 +264,7 @@ def remove_package(package):
       check_for_and_delete(f'{settings.install_path}/{file}')
    # Sed's are easier to understand
    # it's removed from wanted in remove.py
-   subprocess.run(f"sed -i '/{package}/d' {settings.install_path}/{lib_dir}/installed_package" , shell=True)
+   subprocess.run(f"sed -i '/^{package}$/d' {settings.install_path}/{lib_dir}/installed_package" , shell=True)
 
 def remove_packages(packages):
    text_column = TextColumn("{task.description}", table_column=Column(ratio=1))
