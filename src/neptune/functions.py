@@ -209,6 +209,7 @@ def check_if_packages_exist(packages):
          sys.exit(1)
 
 def check_if_package_installed(package, check):
+   # If check is false it will always return false, this is to account for the depend recalculation during remove
    if not check:
       return False
    return package in installed_packages
