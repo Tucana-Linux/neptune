@@ -8,12 +8,10 @@ CHROOT="$TEMP_DIR/chroot"
 RED='\033[0;31m' 
 GREEN='\033[0;32m' 
 NC='\033[0m'
-sudo mercury-install yq python-build python-installer
+sudo neptune install yq python-build python-installer
 mkdir -p $TEMP_DIR $REPO_DIR $CHROOT $LOG_DIR
 # Universal Function
 function chroot_setup() {
-    # Using mercury for now, later it will use the system version of neptune-bootstrap
-    # taken from tucana-autobuild
 
   if [[ -d $CHROOT/dev ]]; then
      umount $CHROOT/dev/pts
@@ -28,7 +26,7 @@ function chroot_setup() {
   cd $TEMP_DIR || exit
 
   
-  neptune-boostrap $CHROOT --y
+  neptune-bootstrap $CHROOT --y
   sed -i "s@\"http.*\"@\"${REPO}\"@" $CHROOT/etc/neptune/config.yaml
   
   # Mount temp filesystems
@@ -64,6 +62,11 @@ function setup() {
   fi
   cp -rpv $CHROOT/neptune-test/* $CHROOT
   mkdir -p $CHROOT/etc/neptune
+  # Wipe installed_package and wanted_packages it doesn't interfere
+  rm -f $CHROOT/var/lib/neptune/installed_package
+  rm -f $CHROOT/var/lib/neptune/wanted_packages
+  touch $CHROOT/var/lib/neptune/installed_package
+  touch $CHROOT/var/lib/neptune/wanted_packages
   cat > $CHROOT/etc/neptune/config.yaml << "EOF"
 repositories:
   - "http://127.0.0.1:99"
@@ -531,5 +534,6 @@ function run_tests() {
   run_test reinstall_test "Neptune Reinstall"
   run_test remove_test "Neptune Remove"
   run_test update_test "Neptune Update"
+  echo "All Tests Passed"
 }
 run_tests
