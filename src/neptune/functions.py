@@ -72,6 +72,13 @@ def generate_file_list(package):
           subprocess.run(f'sed -i "\\@{file}@d" {lib_dir}/file-lists/{package}.list', shell=True)
     os.chdir(cache_dir)
 
+# Any error that may be ignored should use this function, otherwise exit within.
+def throw_error(error):
+   if not settings.continue_on_error:
+      print(f"Error: {error}, aborting.")
+      sys.exit(1)
+   print(f"Warning: {error}, going through")
+
 def postinst():
    for package in postinstalls:
       print(f"Running {package} post-install")
@@ -106,9 +113,8 @@ def download_link(link, output_path, package=None, console_line=None):
             #progress.update(download_task, advance=len(chunk))
    except requests.RequestException as e:
       # TODO Fix for progress bars <rahul@tucanalinux.org>
-      print(f"Failed to download {link}, you have likely lost internet, error: {e}")
+      throw_error(f"Failed to download {link}, you have likely lost internet, error: {e}")
       subprocess.run(f"rm -f {output_path}")
-      sys.exit(1)
    
 def check_for_and_delete(path_to_delete):
    # in case more logic is needed later
@@ -121,13 +127,15 @@ def parse_backup_file(package):
          with open('backup', 'r') as backup_file:
             backup = [os.path.join(settings.install_path, line.rstrip()) for line in backup_file]
       except Exception as e:
-         print(f"Error reading from backup file error {e}, aborting updates")
-         sys.exit(1)
+         throw_error(f"Error reading from backup file error {e}")
    return backup
 
 def copy_files(package):
    # doesn't check for backup because it is only used on first install
-   subprocess.run(f'cp -rp {package}/* {settings.install_path}', shell=True)
+   try:
+      subprocess.run(f'cp -rp {package}/* {settings.install_path}', shell=True)
+   except Exception as e:
+        throw_error(f"Error could not copy files exception {e}")
    for i in ['depends', 'depend', 'make-depend', 'make-depends', 'postinst', 'preinst', 'prerm', 'preupdate', 'backup']:
       check_for_and_delete(f'{settings.install_path}/{i}')
 
@@ -206,6 +214,7 @@ def check_if_packages_exist(packages):
    for package in packages:
       if not package in available_packages:
          print(f'{package} was not found, exiting')
+         # No throw error here because this would screw everything up if it continued.
          sys.exit(1)
 
 def check_if_package_installed(package, check):

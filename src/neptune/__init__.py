@@ -22,6 +22,7 @@ def parse_config():
       functions.settings.install_path = config['system-settings']['install_path']
       functions.settings.yes_mode = config['system-settings']['yes_mode_by_default']
       functions.settings.stream_chunk_size = config['system-settings']['stream_chunk_size']
+      functions.settings.continue_on_error = config['system-settings']['continue-on-error']
    except KeyError as e:
       print(f"An unexpected value was found in {e}")
 

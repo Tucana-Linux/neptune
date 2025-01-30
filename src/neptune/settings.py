@@ -15,6 +15,7 @@ class NeptuneSettings:
         self.repo = ""
         # TODO Consider removing this
         self.install_path = "/"
+        self.continue_on_error = ""
         self.yes_mode = False
         self.no_depend_mode = False
         self.stream_chunk_size = 8192
