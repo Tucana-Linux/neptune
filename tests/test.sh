@@ -3,13 +3,15 @@ REPO="http://192.168.1.143:88"
 # DO NOT CHANGE
 TEMP_DIR="$PWD/temp"
 LOG_DIR="$TEMP_DIR/logs"
+GIT_LOCATION="$TEMP_DIR/../"
 REPO_DIR="$TEMP_DIR/repo"
+REPO2_DIR="$TEMP_DIR/repo2"
 CHROOT="$TEMP_DIR/chroot"
 RED='\033[0;31m' 
 GREEN='\033[0;32m' 
 NC='\033[0m'
-sudo neptune install yq python-build python-installer
-mkdir -p $TEMP_DIR $REPO_DIR $CHROOT $LOG_DIR
+sudo neptune install yq python-build python-installer screen
+mkdir -p $TEMP_DIR $REPO_DIR $REPO2_DIR $CHROOT $LOG_DIR
 # Universal Function
 function chroot_setup() {
 
@@ -19,7 +21,7 @@ function chroot_setup() {
      umount $CHROOT/proc
      umount $CHROOT/sys
      rm -rf $TEMP_DIR
-     mkdir -p $TEMP_DIR $REPO_DIR $CHROOT $LOG_DIR
+     mkdir -p $TEMP_DIR $REPO_DIR $REPO2_DIR $CHROOT $LOG_DIR
   fi
   sleep 3  
   # Subset of the installer script, check there for explanations
@@ -53,8 +55,8 @@ function chroot_setup() {
 
 function setup() {
   mkdir -p $REPO_DIR/{packages,depend,available-packages}
-  cd $TEMP_DIR
-  cd ..
+  mkdir -p $REPO2_DIR/{packages,depend,available-packages}
+  cd $GIT_LOCATION
   python3 -m build --wheel --skip-dependency-check
   if ! python3 -m installer --destdir=$CHROOT/neptune-test dist/*.whl; then
     echo "SETUP FAILED!"
@@ -68,17 +70,24 @@ function setup() {
   touch $CHROOT/var/lib/neptune/installed_package
   touch $CHROOT/var/lib/neptune/wanted_packages
   cat > $CHROOT/etc/neptune/config.yaml << "EOF"
-repositories:
-  - "http://127.0.0.1:99"
-
 system-settings:
   install_path: "/"
   yes_mode_by_default: false
-  stream_chunk_size: 8192  
+  stream_chunk_size: 8192
+EOF
+cat > $CHROOT/etc/neptune/repositories.yaml << "EOF"
+repositories:
+    repo1:
+        url: "http://127.0.0.1:99/"
+    repo2:
+        url: "http://127.0.0.1:98/"
+EOF
 EOF
   cd $REPO_DIR
   screen -dmS repo python3 -m http.server 99
-  cd -
+  cd $REPO2_DIR
+  screen -dmS repo python3 -m http.server 98
+  cd $GIT_LOCATION
 }
 
 function make_mock_package() {
@@ -86,14 +95,25 @@ function make_mock_package() {
   local depends="$2"
   local use_postinst="$3"
   local backup="$4"
+  local repo="$5"
+  local version="$6"
 
   cd $TEMP_DIR || exit
   mkdir -p "$pkgname"/tests/"$pkgname"
-  # Looks weird but essentialy just to make sure that file operations are working throughout
+  # Looks weird but essentially just to make sure that file operations are working throughout
   date=$(date)
   echo "$pkgname $date" > "$pkgname"/tests/"$pkgname"/"$pkgname"
-  echo "$depends" > $REPO_DIR/depend/depend-$pkgname
-  cd $REPO_DIR/depend/ || exit
+  if [[ $repo == "1" ]]; then
+    echo "$depends" > $REPO_DIR/depend/depend-$pkgname
+    cd $REPO_DIR/depend/ || exit
+  elif [[ $repo == "2" ]]; then
+    echo "$depends" > $REPO2_DIR/depend/depend-$pkgname
+    cd $REPO2_DIR/depend/ || exit
+  else
+    echo "TEST ERROR, REPO not defined for package $pkgname"
+    exit 1
+  fi
+
   tar -cvzpf depends.tar.xz *
   cd - || exit
   if [[ $use_postinst == "true" ]]; then
@@ -108,14 +128,24 @@ EOF
     echo "option1=original" > "$pkgname"/tests/"$pkgname"/config.yaml
     echo "/tests/$pkgname/config.yaml" > $pkgname/backup
   fi
+  echo "$version" > "$pkgname"/tests/"$pkgname"/version
 
   tar -cvzpf "$pkgname".tar.xz "$pkgname"
   rm -rf "$pkgname"
-  mv "$pkgname".tar.xz $REPO_DIR/packages/
+  if [[ $repo == "1" ]]; then
+    mv "$pkgname".tar.xz $REPO_DIR/packages/
+    cd $REPO_DIR/packages/ || exit
+  elif [[ $repo == "2" ]]; then
+    mv "$pkgname".tar.xz $REPO2_DIR/packages/
+    cd $REPO2_DIR/packages/ || exit
+  fi
 
   cd $REPO_DIR/packages || exit
   ls | sed 's/.tar.xz//g' > ../available-packages/packages
   sha256sum * > ../available-packages/sha256
+  echo "$version" >> ../available-packages/versions
+  sort ../available-packages/versions > ../available-packages/versions-temp
+  mv ../available-packages/versions-temp ../available-packages/versions
   cd - || exit
 }
 
@@ -132,7 +162,7 @@ function p_or_f() {
 # Test Functions
 function config_test() {
   echo "Running configuration test..."
-  make_mock_package "test-package" "" "" ""
+  make_mock_package "test-package" "" "" "" "1" "1.0.0"
 
   local config_path="$CHROOT/etc/neptune/config.yaml"
 
@@ -194,7 +224,7 @@ function config_test() {
 
 function arguments_test() {
   echo "Running arguments test..."
-  make_mock_package "arguments-test" "" "" ""
+  make_mock_package "arguments-test" "" "" "" "1" "1.0.0"
   
   chroot $CHROOT /bin/bash -c "neptune sync" >/dev/null 2>&1
   # Test: Install without arguments
@@ -215,7 +245,7 @@ function arguments_test() {
 
   # Test: Install with a valid package and --y
   echo "Testing 'neptune install --y arguments-test'..."
-  make_mock_package "arguments-test" "" "" ""
+  make_mock_package "arguments-test" "" "" "" "1" "1.0.0"
   chroot $CHROOT /bin/bash -c "neptune sync" >/dev/null
   chroot $CHROOT /bin/bash -c "neptune install --y arguments-test" &
   sleep 5
@@ -226,7 +256,7 @@ function arguments_test() {
 
   # Test: Install with a valid package without --y
   # it will proceeed if all packages are installed so we need a new one if the last one worked
-  make_mock_package "arguments-test-2" "" "" ""
+  make_mock_package "arguments-test-2" "" "" "" "1" "1.0.0"
   chroot $CHROOT /bin/bash -c "neptune sync"
 
   echo "Testing 'neptune install with yes_mode set to false without --y, should not proceed'..."
@@ -255,7 +285,8 @@ function sync_test() {
   # todo fix this Rahul Chandra <rahul@tucanalinux.org>
   echo "Running sync test"
   # need to do this to init the repo
-  make_mock_package "sync-test" "" "" ""
+  make_mock_package "sync-test" "" "" "" "1" "1.0.0"
+  make_mock_package "sync-test" "" "" "" "2" "1.0.0"
 
   chroot $CHROOT /bin/bash -c "neptune sync"
   local result=$?
@@ -265,21 +296,31 @@ function sync_test() {
   fi
 
   # Validate that the files were fetched and extracted
-  if [[ ! -f $CHROOT/var/lib/neptune/cache/available-packages ]]; then
-    echo "Available packages file not downloaded"
-    return 1
-  fi
-  if [[ ! -d $CHROOT/var/lib/neptune/cache/depend ]]; then
-    echo "Dependency files not extracted"
-    return 1
-  fi
+  for num in "1 2"; do
+    if [[ ! -f $CHROOT/var/lib/neptune/cache/repos/repo$num/available-packages ]]; then
+      echo "Available packages file for repo$num not downloaded"
+      return 1
+    fi
+    if [[ ! -f $CHROOT/var/lib/neptune/cache/repos/repo$num/versions ]]; then
+      echo "Versions file for repo$num not downloaded"
+      return 1
+    fi
+    if [[ ! -f $CHROOT/var/lib/neptune/cache/repos/repo$num/sha256 ]]; then
+      echo "sha256 file for repo$num not downloaded"
+      return 1
+    fi
+    if [[ ! -d $CHROOT/var/lib/neptune/cache/repos/repo$num/depend ]]; then
+      echo "Dependency files for repo$num not extracted"
+      return 1
+    fi
+  done
 
   echo "Sync test passed"
   return 0
 }
 #function bootstrap_test() {}
 function install_test_no_depends() {
-  make_mock_package "install-test" "" "" ""
+  make_mock_package "install-test" "" "" "" "1" "1.0.0"
 
   chroot $CHROOT /bin/bash -c "neptune sync"
   # test non existent package first
@@ -314,8 +355,8 @@ function install_test_no_depends() {
 }
 function install_test_with_depends() {
   # TODO Test circular dependency resolution Rahul Chandra <rahul@tucanalinux.org>
-  make_mock_package "libtest" "" "" ""
-  make_mock_package "install-test-depend" "libtest" "" ""
+  make_mock_package "libtest" "" "" "" "1" "1.0.0"
+  make_mock_package "install-test-depend" "libtest" "" "" "1" "1.0.0"
 
   chroot $CHROOT /bin/bash -c "neptune sync"
   chroot $CHROOT /bin/bash -c "neptune install --y install-test-depend"
@@ -337,7 +378,7 @@ function install_test_with_depends() {
 }
 
 function install_test_with_postinst() {
-  make_mock_package "install-test-postinst" "" "true" ""
+  make_mock_package "install-test-postinst" "" "true" "" "1" "1.0.0"
   chroot $CHROOT /bin/bash -c "neptune sync"
   chroot $CHROOT /bin/bash -c "neptune install --y install-test-postinst"
   
@@ -354,7 +395,7 @@ function install_test_with_postinst() {
 
 function reinstall_test() {
   # If this test passes than we know that file io while the file is open is already working
-  make_mock_package "reinstall-test" "" "" ""
+  make_mock_package "reinstall-test" "" "" "" "1" "1.0.0"
   chroot $CHROOT /bin/bash -c "neptune sync"
   chroot $CHROOT /bin/bash -c "neptune install --y reinstall-test"
 
@@ -401,13 +442,30 @@ EOF
     
 }
 
+function multi_repo_test() {
+  make_mock_package "multi-repo" "" "" "" "1" "1.0.0"
+  # TODO multi-repo sync support has already been verified in the sync test
+  chroot $CHROOT /bin/bash -c "neptune sync"
+  chroot $CHROOT /bin/bash -c "neptune install multi-repo"
+  make_mock_package "multi-repo" "" "" "" "2" "1.0.1"
+  chroot $CHROOT /bin/bash -c "neptune sync"
+  chroot $CHROOT /bin/bash -c "neptune update"
+  # check for update
+  ####
+
+  # install package that is in repo 2 but not 1 
+  make_mock_package "multi-repo-2" "" "" "" "2" "1.0.0"
+  chroot $CHROOT /bin/bash -c "neptune sync"
+  chroot $CHROOT /bin/bash -c "neptune install multi-repo-2"
+}
+
 function update_test() {
-  # This is probably the most complicated one here so let me explain it
+  # This is probably the most complicated one here so here's an explanation
   # Packages: update-test-root, libupdate, libupdatenew
   # update-test-root is the root package, it will have a config file that will need to be backed up and initally depend on libupdate
   # libupdate is going to be the inital dependency of update-test-root
   # at this point update-test-root will be installed
-  # update-test-root will be changed in the repo, new sha256sum, and it will have it's dependencies changed to libupdatenew
+  # update-test-root will be changed in the repo, new sha256sum and version, and it will have it's dependencies changed to libupdatenew
   # config file will be changed so that option1=new, sha256sum will be recorded
   # neptune update will run
   # in order for the test to pass it must
@@ -415,10 +473,11 @@ function update_test() {
   # 2) remove libupdate
   # 3) Install libupdatenew
   # 4) Not error
+  # This does not test multi-repo support
 
-  make_mock_package "update-test-root" "libupdate" "" "1"
-  make_mock_package "libupdate" "" "" ""
-  make_mock_package "libupdatenew" "" "" ""
+  make_mock_package "update-test-root" "libupdate" "" "1" "1.0.0"
+  make_mock_package "libupdate" "" "" "" "1" "1.0.0"
+  make_mock_package "libupdatenew" "" "" "" "1" "1.0.0"
   chroot $CHROOT /bin/bash -c "neptune sync"
   # TODO When doing integrity checking check to see how you are going to resolve new packages always updating
   cp $CHROOT/var/lib/neptune/cache/sha256 $CHROOT/var/lib/neptune/current
@@ -430,7 +489,7 @@ function update_test() {
   # We don't need to retest whether the depend was installed or not because that should've already been tested
   # sleep so that it has a new date
   sleep 4
-  make_mock_package "update-test-root" "libupdatenew" "" "1"
+  make_mock_package "update-test-root" "libupdatenew" "" "1" "1" "1.0.1"
   echo "option 1=new" > $CHROOT/tests/update-test-root/config.yaml
   CONFIG_HASH=$(sha256sum $CHROOT/tests/update-test-root/config.yaml)
   FILE_HASH=$(sha256sum $CHROOT/tests/update-test-root/update-test-root)
@@ -468,8 +527,8 @@ function update_test() {
 }
 function remove_test() {
   # Create mock packages to test removal
-  make_mock_package "remove-test-depend" "" "" ""
-  make_mock_package "remove-test" "remove-test-depend" "" ""
+  make_mock_package "remove-test-depend" "" "" "" "1" "1.0.0"
+  make_mock_package "remove-test" "remove-test-depend" "" "" "1" "1.0.0"
 
   # Sync the package list and install the mock packages
   chroot $CHROOT /bin/bash -c "neptune sync"

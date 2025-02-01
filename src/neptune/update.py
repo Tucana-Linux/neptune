@@ -13,7 +13,7 @@ def check_for_updates():
    # Cursed python array syntax, removes .tar.xz from packages and checks the output of diff
    # to see which ones are different
    updates = [
-      line.split()[-1].replace('.tar.xz', '')
+      line
       for line in diff_command.stdout.splitlines()
       if line.startswith('>')
    ]

@@ -1,0 +1,17 @@
+system-settings:
+  # DO NOT CHANGE
+  install_path: "/"
+  # Disables confirmation for all programs if true (cli flag --y)
+  yes_mode_by_default: false
+  stream_chunk_size: 8192
+  # For any interim errors like losing internet in the middle
+  # it will turn the error into warning (cli flag --no-error)
+  continue_on_error: false
+  # Mostly for sync, it will automatically delete any repo-cache data for
+  # repos that refuse connection for any reason, otherwise it will error
+  # (cli flag --ignore-nonfunctional-repos
+  ignore_no_response_repos: false
+  # sync on install and update without typing neptune sync
+  autosync: true
+  # valid options [info] (all) [warning] (errors & warnings) [errors] (errors) 
+  loglevel: warning
