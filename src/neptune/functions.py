@@ -34,7 +34,6 @@ packages = []
 packages_set = set()
 operation = ""
 
-# needs to be down here because it repository relies on cache_dir, it could be above but this makes it more obvious
 try:
    installed_packages = set(open(f"{settings.lib_dir}/installed_package", "r").read().splitlines())
    with open(f"{settings.lib_dir}/versions", 'r') as file:
