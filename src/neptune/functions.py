@@ -194,7 +194,7 @@ def check_if_packages_exist(packages):
          if repo.check_if_package_exists(package):
             return True
       logging.error(f"{package} not found")
-      sys.exit(1)
+      return False
       
 
 def check_if_package_installed(package, check):

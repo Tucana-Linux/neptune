@@ -12,6 +12,9 @@ def check_for_updates():
    updates = []
 
    for package in functions.installed_packages:
+      # ignore unavailable packages
+      if not functions.check_if_packages_exist(package):
+         continue
       best_repo = functions.find_repo_with_best_version(package)
       if Version(best_repo.get_package_ver(package)) > Version(functions.versions[package]):
          updates.append(package)
