@@ -34,6 +34,8 @@ packages = []
 packages_set = set()
 operation = ""
 
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
 try:
    installed_packages = set(open(f"{settings.lib_dir}/installed_package", "r").read().splitlines())
    with open(f"{settings.lib_dir}/versions", 'r') as file:
