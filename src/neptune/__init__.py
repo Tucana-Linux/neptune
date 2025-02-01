@@ -1,7 +1,9 @@
 #!/bin/python3
+import logging
 import sys
 
 import yaml
+from neptune.classes.Repository import Repository
 import neptune.functions as functions 
 from neptune.install import install
 from neptune.reinstall import reinstall
@@ -16,15 +18,34 @@ def parse_config():
          except yaml.YAMLError as e:
             print(f"Error parsing yaml syntax {e}")
    except Exception as e:
-      print(f"An unexpected error occured {e}")
+      logging.error(f"An unexpected error occured {e}")
+      sys.exit(1)
    try:
-      functions.settings.repo = config['repositories'][0]
       functions.settings.install_path = config['system-settings']['install_path']
       functions.settings.yes_mode = config['system-settings']['yes_mode_by_default']
       functions.settings.stream_chunk_size = config['system-settings']['stream_chunk_size']
       functions.settings.continue_on_error = config['system-settings']['continue-on-error']
    except KeyError as e:
-      print(f"An unexpected value was found in {e}")
+      logging.error(f"An unexpected value was found in {e}")
+      sys.exit(1)
+
+def parse_repos():
+   try:
+      with open('/etc/neptune/repositories.yaml', 'r') as repo_file:
+         try:
+            repos = yaml.safe_load(repo_file)
+         except yaml.YAMLError as e:
+            logging.error(f"Error parsing yaml syntax {e}")
+            sys.exit(1)
+   except Exception as e:
+      logging.error(f"An unexpected error occured {e}")
+      sys.exit(1)
+   try:
+      for repo in repos['repositories']:
+         repo_object = Repository(repo, repos['repositories']['url'])
+         functions.settings.repositories[repo] = repo_object
+   except Exception as e:
+         logging.error(f"Error parsing repositories file exception {e}")
 
 def parse_arguments():
   valid_cli_arguments = ["--y", "--no-depend"]

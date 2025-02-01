@@ -11,7 +11,7 @@ system-settings:
   # repos that refuse connection for any reason, otherwise it will error
   # (cli flag --ignore-nonfunctional-repos
   ignore_no_response_repos: false
-  # sync on install and update without typing neptune sync
+  # sync on install and update without typing neptune sync (cli flag --sync)
   autosync: true
   # valid options [info] (all) [warning] (errors & warnings) [errors] (errors) 
   loglevel: warning

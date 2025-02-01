@@ -2,22 +2,20 @@ import subprocess
 import sys
 import os
 import requests
+from packaging.version import Version
 
 from neptune import functions
 '''
 Update Block
 '''
 def check_for_updates():
-   # This is almost directly refactored from mercury
-   diff_command = subprocess.run(f"diff {functions.lib_dir}/current {functions.cache_dir}/versions", shell=True, capture_output=True, text=True)
-   # Cursed python array syntax, removes .tar.xz from packages and checks the output of diff
-   # to see which ones are different
-   updates = [
-      line
-      for line in diff_command.stdout.splitlines()
-      if line.startswith('>')
-   ]
-   return updates
+   updates = []
+
+   for package in functions.installed_packages:
+      best_repo = functions.find_repo_with_best_version(package)
+      if Version(best_repo.get_package_ver(package)) > Version(functions.versions[package]):
+         updates.append(package)
+      
 
 def update():
    updates = check_for_updates()
@@ -45,5 +43,4 @@ def update():
    functions.install_packages(updates, "other")
    if len(remove) > 0:
     functions.remove_packages(remove)
-   subprocess.run(f"cp {functions.cache_dir}/sha256 {functions.lib_dir}/current", shell=True)
    
