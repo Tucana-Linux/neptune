@@ -41,7 +41,7 @@ def parse_repos():
       sys.exit(1)
    try:
       for repo in repos['repositories']:
-         repo_object = Repository(repo, repos['repositories']['url'])
+         repo_object = Repository(repo, repo['url'])
          functions.settings.repositories[repo] = repo_object
    except Exception as e:
          logging.error(f"Error parsing repositories file exception {e}")
@@ -92,5 +92,6 @@ def run_operation():
 def main():
    # also initalizes all the functions variables
    parse_config()
+   parse_repos()
    parse_arguments()
    run_operation()

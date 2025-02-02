@@ -80,10 +80,10 @@ system-settings:
 EOF
 cat > $CHROOT/etc/neptune/repositories.yaml << "EOF"
 repositories:
-    repo1:
-        url: "http://127.0.0.1:99/"
-    repo2:
-        url: "http://127.0.0.1:98/"
+  repo1:
+    url: "http://127.0.0.1:99/"
+  repo2:
+    url: "http://127.0.0.1:98/"
 EOF
   cd $REPO_DIR
   screen -dmS repo python3 -m http.server 99
@@ -299,7 +299,7 @@ function sync_test() {
   fi
 
   # Validate that the files were fetched and extracted
-  for num in "1 2"; do
+  for num in "1\n2"; do
     if [[ ! -f $CHROOT/var/lib/neptune/cache/repos/repo$num/available-packages ]]; then
       echo "Available packages file for repo$num not downloaded"
       return 1
