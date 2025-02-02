@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 [project]
 dependencies=["requests", "PyYAML", "rich", "packaging"]
 name = "neptune"
-version = "0.1.5"
+version = "0.2.0-alpha"
 authors = [
   { name="Rahul Chandra", email="rahul@tucanalinux.org" },
 ]
