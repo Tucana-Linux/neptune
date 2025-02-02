@@ -50,12 +50,15 @@ function chroot_setup() {
   echo "Building Locales"
   echo "en_US.UTF-8 UTF-8" > $CHROOT/etc/locale.gen
   chroot $CHROOT /bin/bash -c "locale-gen"
+  chroot $CHROOT /bin/bash -c "neptune install --y python-packaging"
+
 
 }
 
 function setup() {
   mkdir -p $REPO_DIR/{packages,depend,available-packages}
   mkdir -p $REPO2_DIR/{packages,depend,available-packages}
+  touch $CHROOT/var/lib/neptune/versions
   cd $GIT_LOCATION
   python3 -m build --wheel --skip-dependency-check
   if ! python3 -m installer --destdir=$CHROOT/neptune-test dist/*.whl; then
@@ -81,7 +84,6 @@ repositories:
         url: "http://127.0.0.1:99/"
     repo2:
         url: "http://127.0.0.1:98/"
-EOF
 EOF
   cd $REPO_DIR
   screen -dmS repo python3 -m http.server 99
@@ -343,8 +345,12 @@ function install_test_no_depends() {
     echo "Installation did not install the file list"
     return 1
   fi
-  if ! cat $CHROOT//var/lib/neptune/installed_package | grep install-test; then
+  if ! cat $CHROOT/var/lib/neptune/installed_package | grep install-test; then
     echo "Package not in installed_package"
+    return 1
+  fi
+  if ! cat $CHROOT/var/lib/neptune/versions | grep install-test; then
+    echo "Package not in versions"
     return 1
   fi
   if ! cat $CHROOT/var/lib/neptune/wanted_packages | grep install-test; then

@@ -22,3 +22,4 @@ class NeptuneSettings:
         self.lib_dir = f"{self.install_path}/var/lib/neptune/"
         self.cache_dir = f"{self.install_path}/var/lib/neptune/cache"
 
+
