@@ -92,6 +92,5 @@ def run_operation():
 def main():
    # also initalizes all the functions variables
    parse_config()
-   functions.check_online()
    parse_arguments()
    run_operation()
