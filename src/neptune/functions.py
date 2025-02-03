@@ -190,15 +190,18 @@ def install_packages(packages, operation, reinstalling=False):
          progress.update(task, advance=1)
          live.update(get_status_group())
    postinst()
-
+def check_if_package_exists(package):
+   for _, repo in settings.repositories.items():
+      if repo.check_if_package_exists(package):
+         return True
+   return False
 def check_if_packages_exist(packages):
    for package in packages:
       logging.debug(f"checking existence of {package}")
-      for _, repo in settings.repositories.items():
-         if repo.check_if_package_exists(package):
-            return True
-      logging.error(f"{package} not found")
-      return False
+      if not check_if_package_exists(package):
+         logging.error(f"{package} not found")
+         return False
+      return True
       
 def check_if_package_installed(package, check):
    # If check is false it will always return false, this is to account for the depend recalculation during remove
@@ -236,12 +239,9 @@ def recalculate_system_depends():
    def check_if_packages_exist_return_packages(packages):
       packages_no_exist = []
       for package in packages:
-         for _, repo in settings.repositories.items():
-            if repo.check_if_package_exists(package):
-               continue
-         print(f"{package} not found")
-         subprocess.run(f'sed -i \'/{package}/d\' {settings.lib_dir}/wanted_packages', shell=True)
-         packages_no_exist.append(package)
+         if not check_if_package_exists(package):
+            subprocess.run(f'sed -i \'/{package}/d\' {settings.lib_dir}/wanted_packages', shell=True)
+            packages_no_exist.append(package)
       return packages_no_exist
    remove = []
    # check to see if anything currently installed is no longer avaliable
