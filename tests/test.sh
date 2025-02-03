@@ -1,9 +1,9 @@
 #!/bin/bash
 REPO="http://192.168.1.143:88"
 # DO NOT CHANGE
-TEMP_DIR="$PWD/temp"
+TEMP_DIR="$HOME/neptune-tests"
 LOG_DIR="$TEMP_DIR/logs"
-GIT_LOCATION="$TEMP_DIR/../"
+GIT_LOCATION="/home/rahul/Git-Clones/tucana/neptune/"
 REPO_DIR="$TEMP_DIR/repo"
 REPO2_DIR="$TEMP_DIR/repo2"
 CHROOT="$TEMP_DIR/chroot"
@@ -88,7 +88,7 @@ EOF
   cd $REPO_DIR
   screen -dmS repo python3 -m http.server 99
   cd $REPO2_DIR
-  screen -dmS repo python3 -m http.server 98
+  screen -dmS repo2 python3 -m http.server 98
   cd $GIT_LOCATION
 }
 
@@ -141,11 +141,17 @@ EOF
     mv "$pkgname".tar.xz $REPO2_DIR/packages/
     cd $REPO2_DIR/packages/ || exit
   fi
+  if [[ $repo == "1" ]]; then
+    cd $REPO_DIR/packages || exit
+  fi
 
-  cd $REPO_DIR/packages || exit
+  if [[ $repo == "2" ]]; then
+    cd $REPO2_DIR/packages || exit
+  fi
+
   ls | sed 's/.tar.xz//g' > ../available-packages/packages
   sha256sum * > ../available-packages/sha256
-  echo "$version" >> ../available-packages/versions
+  echo "$pkgname: $version" >> ../available-packages/versions
   sort ../available-packages/versions > ../available-packages/versions-temp
   mv ../available-packages/versions-temp ../available-packages/versions
   cd - || exit
@@ -299,7 +305,8 @@ function sync_test() {
   fi
 
   # Validate that the files were fetched and extracted
-  for num in "1\n2"; do
+  IFS=" "
+  for num in $(echo "1 2"); do
     if [[ ! -f $CHROOT/var/lib/neptune/cache/repos/repo$num/available-packages ]]; then
       echo "Available packages file for repo$num not downloaded"
       return 1
@@ -317,7 +324,7 @@ function sync_test() {
       return 1
     fi
   done
-
+  IFS=$' \t\n'
   echo "Sync test passed"
   return 0
 }
@@ -482,7 +489,7 @@ function update_test() {
   # 4) Not error
   # This does not test multi-repo support
 
-  make_mock_package "update-test-root" "libupdate" "" "1" "1.0.0"
+  make_mock_package "update-test-root" "libupdate" "" "" "1" "1.0.0"
   make_mock_package "libupdate" "" "" "" "1" "1.0.0"
   make_mock_package "libupdatenew" "" "" "" "1" "1.0.0"
   chroot $CHROOT /bin/bash -c "neptune sync"
@@ -493,6 +500,7 @@ function update_test() {
     echo "Test failed: Could not install package"
     return 1
   fi
+  echo "Package installed"
   # We don't need to retest whether the depend was installed or not because that should've already been tested
   # sleep so that it has a new date
   sleep 4

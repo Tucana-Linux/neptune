@@ -4,7 +4,7 @@ import requests
 from neptune import functions
 # initally refactored from mercury-sync
 def sync():
-    for repo in functions.settings.repositories:
+    for _, repo in functions.settings.repositories.items():
         repo.sync()
 
 

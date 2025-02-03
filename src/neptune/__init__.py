@@ -14,7 +14,7 @@ def parse_config():
    try:
       with open('/etc/neptune/config.yaml', 'r') as config_file:
          try:
-            config= yaml.safe_load(config_file)
+            config = yaml.safe_load(config_file)
          except yaml.YAMLError as e:
             print(f"Error parsing yaml syntax {e}")
    except Exception as e:
@@ -40,9 +40,9 @@ def parse_repos():
       logging.error(f"An unexpected error occured {e}")
       sys.exit(1)
    try:
-      for repo in repos['repositories']:
-         repo_object = Repository(repo, repo['url'])
-         functions.settings.repositories[repo] = repo_object
+      for repo_name, repo_data in repos['repositories'].items():
+         repo_object = Repository(repo_name, repo_data['url'])
+         functions.settings.repositories[repo_name] = repo_object
    except Exception as e:
          logging.error(f"Error parsing repositories file exception {e}")
 

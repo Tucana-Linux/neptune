@@ -14,12 +14,9 @@ class NeptuneSettings:
         #print("Reinitalizing")
         # TODO Consider removing install_path
         self.install_path = "/"
-        self.continue_on_error = ""
         self.yes_mode = False
         self.no_depend_mode = False
         self.stream_chunk_size = 8192
         self.repositories = {}
         self.lib_dir = f"{self.install_path}/var/lib/neptune/"
         self.cache_dir = f"{self.install_path}/var/lib/neptune/cache"
-
-

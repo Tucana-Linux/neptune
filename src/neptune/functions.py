@@ -34,7 +34,7 @@ packages = []
 packages_set = set()
 operation = ""
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 try:
    installed_packages = set(open(f"{settings.lib_dir}/installed_package", "r").read().splitlines())
@@ -118,8 +118,8 @@ def update_files(package):
 def find_repo_with_best_version(package):
    latest_ver = Version('0.0.0.0.0')
    # by the fact that check_package_exists will always be run before this, there will **should** always be a best repo
-   best_repo = ""
-   for repo in settings.repositories:
+   best_repo = None
+   for _, repo in settings.repositories.items():
       if not repo.check_if_package_exists(package):
         continue
       version = Version(repo.get_package_ver(package))
@@ -127,8 +127,9 @@ def find_repo_with_best_version(package):
          latest_ver = version
          best_repo = repo
    # just in case
-   if repo == "":
+   if best_repo == None:
       logging.critical(f"Could not find a good repo for {package} even though it exists, THIS IS A BUG, please report to https://github.com/Tucana-Linux/issues")
+      sys.exit(1)
    return best_repo
       
 
@@ -158,7 +159,7 @@ def install_package(package, repo, operation, reinstalling=False, console_line=N
       subprocess.run(f'cp {package}/postinst /tmp/{package}-postinst', shell=True)
    if not reinstalling:
       open(f'{settings.lib_dir}/installed_package', 'a').write(package + "\n")
-      open(f'{settings.lib_dir}/version', 'a').write(f"{package}: {repo.get_package_ver(package)}" + "\n")
+      open(f'{settings.lib_dir}/versions', 'a').write(f"{package}: {repo.get_package_ver(package)}" + "\n")
    subprocess.run(f'rm -rf {package}', shell=True)
    subprocess.run(f'rm -f {package}.tar.xz', shell=True)
 
@@ -192,13 +193,13 @@ def install_packages(packages, operation, reinstalling=False):
 
 def check_if_packages_exist(packages):
    for package in packages:
-      for repo in settings.repositories:
+      logging.debug(f"checking existence of {package}")
+      for _, repo in settings.repositories.items():
          if repo.check_if_package_exists(package):
             return True
       logging.error(f"{package} not found")
       return False
       
-
 def check_if_package_installed(package, check):
    # If check is false it will always return false, this is to account for the depend recalculation during remove
    if not check:
@@ -207,6 +208,7 @@ def check_if_package_installed(package, check):
 
 def get_depends(temp_packages, check_installed):
    if len(temp_packages) == 0:
+      global packages
       packages = [*packages_set]
       return [*packages_set]
    for package in temp_packages:
@@ -216,34 +218,37 @@ def get_depends(temp_packages, check_installed):
          try:
             depends=[]
             repo = find_repo_with_best_version(package).name
-            with open(f'{settings.cache_dir}/{repo}/depend/depend-{package}', 'r') as depend_file:
+            with open(f'{settings.cache_dir}/repos/{repo}/depend/depend-{package}', 'r') as depend_file:
                depends = depend_file.read().split()
          except FileNotFoundError:
             logging.warning(f"{package} depends file NOT found, something is SERIOUSLY WRONG")
             continue
          # Validate then recurse
-         check_if_packages_exist(depends)
+         logging.debug(f"{package} has depends {depends}")
+         if not check_if_packages_exist(depends):
+            sys.exit(1)
          get_depends(depends, check_installed)
    return packages_set
 
 
 def recalculate_system_depends():
    # duplicated function for a different purpose :( isinstance has too much of a performance penalty for my liking
-   def check_if_packages_exist(packages):
+   def check_if_packages_exist_return_packages(packages):
       packages_no_exist = []
       for package in packages:
-         for repo in settings.repositories:
+         for _, repo in settings.repositories.items():
             if repo.check_if_package_exists(package):
-               return True
+               continue
          print(f"{package} not found")
          subprocess.run(f'sed -i \'/{package}/d\' {settings.lib_dir}/wanted_packages', shell=True)
          packages_no_exist.append(package)
       return packages_no_exist
    remove = []
    # check to see if anything currently installed is no longer avaliable
-   remove.extend(check_if_packages_exist(installed_packages) )
+   remove.extend(check_if_packages_exist_return_packages(installed_packages))
    # this isn't global because sync doesn't create this file
    wanted_packages = set(open(f"{settings.lib_dir}/wanted_packages", "r").read().splitlines())
+   logging.debug(f"Recalculating system dependencies, Current wanted packages: {wanted_packages} ")
    depends_of_wanted_packages = get_depends(wanted_packages, check_installed=False)
 
    install = [pkg for pkg in depends_of_wanted_packages if pkg not in installed_packages]
