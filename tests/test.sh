@@ -457,20 +457,40 @@ EOF
 }
 
 function multi_repo_test() {
-  make_mock_package "multi-repo" "" "" "" "1" "1.0.0"
-  # TODO multi-repo sync support has already been verified in the sync test
-  chroot $CHROOT /bin/bash -c "neptune sync"
-  chroot $CHROOT /bin/bash -c "neptune install multi-repo"
-  make_mock_package "multi-repo" "" "" "" "2" "1.0.1"
-  chroot $CHROOT /bin/bash -c "neptune sync"
-  chroot $CHROOT /bin/bash -c "neptune update"
-  # check for update
-  ####
-
   # install package that is in repo 2 but not 1 
   make_mock_package "multi-repo-2" "" "" "" "2" "1.0.0"
   chroot $CHROOT /bin/bash -c "neptune sync"
-  chroot $CHROOT /bin/bash -c "neptune install multi-repo-2"
+  chroot $CHROOT /bin/bash -c "neptune install --y multi-repo-2"
+  if [[ ! -f $CHROOT/tests/multi-repo-2/version ]]; then
+    echo "TEST FAILED: Package from repo-2 files not installed"
+    return 1
+  fi
+
+  # update
+  make_mock_package "multi-repo" "" "" "" "1" "1.0.0"
+  chroot $CHROOT /bin/bash -c "neptune sync"
+  chroot $CHROOT /bin/bash -c "neptune install --y multi-repo"
+  make_mock_package "multi-repo" "" "" "" "2" "1.0.1"
+  chroot $CHROOT /bin/bash -c "neptune sync"
+  chroot $CHROOT /bin/bash -c "neptune update --y"
+  if ! cat $CHROOT/tests/multi-repo/version | grep -E '1\.0\.1'; then
+    echo "TEST FAILED: Updating from a package in repo-2 failed"
+    return 1
+  fi
+
+  # depends from other repo
+  make_mock_package "multi-repo-depend" "" "" "" "2" "1.0.0"
+  make_mock_package "multi-repo-main" "multi-repo-depend" "" "" "1" "1.0.0"
+  chroot $CHROOT /bin/bash -c "neptune sync"
+  chroot $CHROOT /bin/bash -c "neptune install --y multi-repo-main"
+
+  if [[ ! -f $CHROOT/tests/multi-repo-depend/version ]]; then
+    echo "TEST FAILED: Cross-repo dependencies test failed"
+    return 1
+  fi
+
+  echo "Test multi-repo PASSED"
+  return 0
 }
 
 function update_test() {

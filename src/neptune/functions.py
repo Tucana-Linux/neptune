@@ -195,13 +195,14 @@ def check_if_package_exists(package):
       if repo.check_if_package_exists(package):
          return True
    return False
+
 def check_if_packages_exist(packages):
    for package in packages:
       logging.debug(f"checking existence of {package}")
       if not check_if_package_exists(package):
          logging.error(f"{package} not found")
          return False
-      return True
+   return True
       
 def check_if_package_installed(package, check):
    # If check is false it will always return false, this is to account for the depend recalculation during remove
