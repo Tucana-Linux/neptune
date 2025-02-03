@@ -70,10 +70,10 @@ def bootstrap():
    global lib_dir
    lib_dir = f'{path}/var/lib/neptune'
    cache_dir = f'{lib_dir}/cache'
+   create_inital_files()
    print("Syncing")
 
    sync()
-   create_inital_files()
 
    print("Getting dependencies")
    packages=functions.get_depends(["base"], check_installed=False)
