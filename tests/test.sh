@@ -502,12 +502,12 @@ repositories:
   repo2:
     url: "http://127.0.0.1:97/"
 EOF
-  chroot $CHROOT /bin/bash "neptune sync"
-  chroot $CHROOT /bin/bash "neptune install --y multi-repo-down-test-2"
-  if [[ $? -eq 0]]; then
+  chroot $CHROOT /bin/bash -c "neptune sync"
+  chroot $CHROOT /bin/bash -c "neptune install --y multi-repo-down-test-2"
+  if [[ $? -eq 0 ]]; then
     echo "TEST FAILED: Neptune install suceeded with package from a repo that is down"
   fi
-  chroot $CHROOT /bin/bash "neptune install --y multi-repo-down-test"
+  chroot $CHROOT /bin/bash -c "neptune install --y multi-repo-down-test"
   if [[ ! -f $CHROOT/tests/multi-repo-down-test/version ]]; then
     echo "TEST FAILED: One repo being unavailable caused all repos to be unavailable"
     return 1
