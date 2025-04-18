@@ -113,9 +113,12 @@ def update_files(package):
          if file in ('postinst', 'depends'):
             continue
          file_path = os.path.join(settings.install_path, os.path.join(root, file).lstrip('.'))
+         src_path = os.path.join(root, file)
+         dest_path = os.path.join(settings.install_path, os.path.join(root, file).lstrip('.'))
          # TODO Implement logging Rahul Chandra <rahul@tucanalinux.org>
          if file_path not in backup:
-            subprocess.run(f'mv {os.path.join(root, file)} {file_path}', shell=True)
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+            shutil.move(src_path, dest_path)
    os.chdir(settings.cache_dir)
 
 def find_repo_with_best_version(package):
