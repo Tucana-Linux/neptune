@@ -61,7 +61,8 @@ def generate_file_list(package):
     # This is a bash oneliner, I know it isn't ideal but it's easier to read than the python alternative
     subprocess.run(f'find * -type f | sed \'s|^|/|g\' > /tmp/{package}.list', shell=True)
     if os.path.isfile(os.path(f"{settings.lib_dir}/file-lists/{package}.list")):
-      remove_old_files(package, f"/tmp/[package].list")
+      remove_old_files(package, f"/tmp/{package}.list")
+    subprocess.run(f'cp -rp /tmp/{package}.list {settings.lib_dir}/file-lists/{package}.list')
     # Remove the files that need to be backed up from the file-list so that they aren't removed
     backup=parse_backup_file(package)
     if not len(backup) == 0:
