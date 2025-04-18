@@ -59,7 +59,9 @@ Universal Functions
 def generate_file_list(package):
     os.chdir(f'{settings.cache_dir}/{package}')
     # This is a bash oneliner, I know it isn't ideal but it's easier to read than the python alternative
-    subprocess.run(f'find * -type f | sed \'s|^|/|g\' > {settings.lib_dir}/file-lists/{package}.list', shell=True)
+    subprocess.run(f'find * -type f | sed \'s|^|/|g\' > /tmp/{package}.list', shell=True)
+    if os.path.isfile(os.path(f"{settings.lib_dir}/file-lists/{package}.list")):
+      remove_old_files(package, f"/tmp/[package].list")
     # Remove the files that need to be backed up from the file-list so that they aren't removed
     backup=parse_backup_file(package)
     if not len(backup) == 0:
@@ -272,6 +274,19 @@ def remove_package(package):
    # it's removed from wanted in remove.py
    subprocess.run(f"sed -i '/^{package}$/d' {settings.lib_dir}/installed_package" , shell=True)
    subprocess.run(f"sed -i '/^{package}:.*$/d' {settings.lib_dir}/version" , shell=True)
+
+# precondition new_file_list is a .list with the new files
+def remove_old_files(package, new_file_list):
+   # used for update to remove old stale files
+   to_remove = []
+   files_old = set(open(f"{settings.lib_dir}/file-lists/{package}.list", "r").read().splitlines())
+   files_new = set(open(new_file_list).read().splitlines())
+   to_remove += [file for file in files_old if file not in files_new]
+   for file in to_remove:
+      check_for_and_delete(file)
+
+
+
 
 def remove_packages(packages):
    text_column = TextColumn("{task.description}", table_column=Column(ratio=1))

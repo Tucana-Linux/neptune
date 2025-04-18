@@ -44,7 +44,6 @@ def update():
    if len(install) > 0:
       functions.install_packages(install, "install")
    # Remove before updating
-   functions.remove_packages(updates)
    functions.install_packages(updates, "other")
    if len(remove) > 0:
       functions.remove_packages(remove)
