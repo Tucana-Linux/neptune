@@ -26,7 +26,7 @@ class Repository:
            
     def check_connection(self):
        try:
-          check_file = requests.head(f'{self.url}/available-packages/sha256')
+          check_file = requests.head(f'{self.url}/available-packages/versions')
           if check_file.status_code != requests.codes.ok:
              logging.warning(f"{self.name} This does not seem to be a Tucana repo server")
              subprocess.run(f"rm -rf {functions.settings.cache_dir}/repos/{self.name}/", shell=True)
@@ -101,6 +101,6 @@ class Repository:
        return package in self.available_packages
         
     # Precondition, a package that exists in this repo
-    def get_package_ver(self, package):
+    def get_package_ver(self, package) -> str:
        return self.versions[package]
 

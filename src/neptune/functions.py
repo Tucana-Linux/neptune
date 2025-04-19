@@ -1,5 +1,6 @@
 #!/bin/python3
 import logging
+from neptune.classes import Repository
 from packaging.version import Version
 import shutil
 import subprocess
@@ -121,7 +122,7 @@ def update_files(package):
             shutil.move(src_path, dest_path)
    os.chdir(settings.cache_dir)
 
-def find_repo_with_best_version(package):
+def find_repo_with_best_version(package) -> Repository:
    latest_ver = Version('0.0.0.0.0')
    # by the fact that check_package_exists will always be run before this, there will **should** always be a best repo
    best_repo = None
