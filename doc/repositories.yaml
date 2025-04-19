@@ -5,5 +5,3 @@ repositories:
         # (opt) priority
     tucana-mainline:
         url: "https://repo.tucanalinux.org/development/mercury/"
-    osuosl:
-        url: "https://ftp2.osuosl.org/pub/tucana-linux/development/mercury/"
