@@ -124,7 +124,9 @@ def update_files(package):
    os.chdir(settings.cache_dir)
 
 def version_normalizer(version:str) -> str:
-   version = re.sub(r"^[^\d]+", "", version)
+   #version = re.sub(r"^[^\d]+", "", version)
+   #version = re.sub(r"[a-zA-Z]", ".", version)
+   version = re.sub(r"[a-zA-Z]", "", version)
    # Replace underscores and hyphens with dots
    version = version.replace("_", ".").replace("-", ".")
    return version 
@@ -217,7 +219,7 @@ def check_if_packages_exist(packages):
    for package in packages:
       logging.debug(f"checking existence of {package}")
       if not check_if_package_exists(package):
-         logging.error(f"{package} not found")
+         logging.warning(f"{package} not found")
          return False
    return True
       
