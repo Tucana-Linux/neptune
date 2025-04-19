@@ -15,6 +15,7 @@ class NeptuneSettings:
         # TODO Consider removing install_path
         self.install_path = "/"
         self.yes_mode = False
+        self.run_postinst = True
         self.no_depend_mode = False
         self.stream_chunk_size = 8192
         self.repositories = {}

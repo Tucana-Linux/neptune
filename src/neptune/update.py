@@ -16,7 +16,7 @@ def check_for_updates():
       if not functions.check_if_packages_exist([package]):
          continue
       best_repo = functions.find_repo_with_best_version(package)
-      if Version(best_repo.get_package_ver(package).replace("-", ".")) > Version(functions.versions[package].replace("-", ".")):
+      if Version(functions.version_normalizer(best_repo.get_package_ver(package))) > Version(functions.version_normalizer(functions.versions[package])):
          updates.append(package)
    
    return updates

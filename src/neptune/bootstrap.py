@@ -2,20 +2,16 @@ from pathlib import Path
 import subprocess
 import sys
 import os
-import requests
 import neptune
-from neptune import functions
+from neptune import functions, sync
 from neptune.classes.NeptuneSettings import NeptuneSettings
-from neptune.sync import sync
 
 # This runs completely standalone from __init__ and therefore a lot of functions are repeated
 # TODO fix this garbage
 arguments = list(sys.argv)
 arguments.pop(0)
-path = ""
-cache_dir = ""
-lib_dir = ""
 settings = NeptuneSettings()
+path=""
 def parse_arguments():
   valid_cli_arguments = ["--y"]
 
@@ -41,38 +37,26 @@ def parse_arguments():
 
 
 def create_inital_files():
-   os.makedirs(cache_dir)
-   os.makedirs(f'{lib_dir}/file-lists')
-   os.makedirs(f'{cache_dir}/depend')
-   try: 
-      sha256 = requests.get(f'{settings.repo}/available-packages/sha256', allow_redirects=True)
-      available_packages = requests.get(f'{settings.repo}/available-packages/packages', allow_redirects=True)
-      open(f'{lib_dir}/current', 'wb').write(sha256.content)
-      open(f'{cache_dir}/available-packages', 'wb').write(available_packages.content)
-   except:
-      print("Error retreiving files from the repository is it online?")
-      sys.exit(1)
-   subprocess.run(f'cp {lib_dir}/current {cache_dir}/sha256', shell=True)
+   os.makedirs(settings.cache_dir)
+   os.makedirs(f'{settings.lib_dir}/file-lists')
+   os.makedirs(f'{settings.cache_dir}/depend')
+   subprocess.run(f"touch {settings.lib_dir}/versions", shell=True)
+   subprocess.run(f"touch {settings.lib_dir}/installed_package", shell=True)
 
 
 def bootstrap():
-   # This is a complete reimplmentation, neptune main never gets called here.
    neptune.parse_config()
    neptune.parse_repos()
    parse_arguments()
    settings.install_path = path
+   settings.run_postinst = False
    settings.cache_dir = f"{path}/var/lib/neptune/cache"
    settings.lib_dir = f"{path}/var/lib/neptune/"
    if not os.listdir(path) == []:
       print("This directory is not empty!")
       sys.exit(1)
-   global cache_dir
-   global lib_dir
-   lib_dir = f'{path}/var/lib/neptune'
-   cache_dir = f'{lib_dir}/cache'
    create_inital_files()
-   print("Syncing")
-
+   # This sync would sync the system about to be bootstrapped which isn't advisable.
    sync()
 
    print("Getting dependencies")
@@ -83,5 +67,5 @@ def bootstrap():
       if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
          print("Aborting")
          sys.exit(0)
-   functions.install_packages(packages)
+   functions.install_packages(packages, "install")
 

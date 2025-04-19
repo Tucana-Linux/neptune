@@ -1,5 +1,6 @@
 #!/bin/python3
 import logging
+import re
 from neptune.classes import Repository
 from packaging.version import Version
 import shutil
@@ -122,14 +123,21 @@ def update_files(package):
             shutil.move(src_path, dest_path)
    os.chdir(settings.cache_dir)
 
+def version_normalizer(version:str) -> str:
+   version = re.sub(r"^[^\d]+", "", version)
+   # Replace underscores and hyphens with dots
+   version = version.replace("_", ".").replace("-", ".")
+   return version 
+
+
 def find_repo_with_best_version(package) -> Repository:
-   latest_ver = Version('0.0.0.0.0')
+   latest_ver = Version('0')
    # by the fact that check_package_exists will always be run before this, there will **should** always be a best repo
    best_repo = None
    for _, repo in settings.repositories.items():
       if not repo.check_if_package_exists(package):
         continue
-      version = Version(repo.get_package_ver(package))
+      version = Version(version_normalizer(repo.get_package_ver(package)))
       if version > latest_ver:
          latest_ver = version
          best_repo = repo
@@ -196,7 +204,9 @@ def install_packages(packages, operation, reinstalling=False):
          status_lines.append(rf" {package} \[[bold blue]✔[/bold blue]]")
          progress.update(task, advance=1)
          live.update(get_status_group())
-   postinst()
+   # only needed for bootstrap postinst
+   if settings.run_postinst:
+      postinst()
 def check_if_package_exists(package):
    for _, repo in settings.repositories.items():
       if repo.check_if_package_exists(package):

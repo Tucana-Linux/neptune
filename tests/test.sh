@@ -3,7 +3,7 @@ REPO="http://192.168.1.143:88"
 # DO NOT CHANGE
 TEMP_DIR="$HOME/neptune-tests"
 LOG_DIR="$TEMP_DIR/logs"
-GIT_LOCATION="/home/rahul/Git-Clones/tucana/neptune/"
+GIT_LOCATION="/home/rahul/Git-Clones/neptune-0.1.3/"
 REPO_DIR="$TEMP_DIR/repo"
 REPO2_DIR="$TEMP_DIR/repo2"
 CHROOT="$TEMP_DIR/chroot"
@@ -152,7 +152,6 @@ EOF
   fi
 
   ls | sed 's/.tar.xz//g' > ../available-packages/packages
-  sha256sum * > ../available-packages/sha256
   echo "$pkgname: $version" >> ../available-packages/versions
   sort ../available-packages/versions > ../available-packages/versions-temp
   mv ../available-packages/versions-temp ../available-packages/versions
@@ -315,10 +314,6 @@ function sync_test() {
     fi
     if [[ ! -f $CHROOT/var/lib/neptune/cache/repos/repo$num/versions ]]; then
       echo "Versions file for repo$num not downloaded"
-      return 1
-    fi
-    if [[ ! -f $CHROOT/var/lib/neptune/cache/repos/repo$num/sha256 ]]; then
-      echo "sha256 file for repo$num not downloaded"
       return 1
     fi
     if [[ ! -d $CHROOT/var/lib/neptune/cache/repos/repo$num/depend ]]; then

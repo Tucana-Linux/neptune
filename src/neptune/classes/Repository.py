@@ -92,7 +92,7 @@ class Repository:
         subprocess.run('tar -xf depends.tar.xz', shell=True)
 
         logging.info(f"{self.name}: Getting meta info")
-        self.download_link(f"available-packages/sha256", f'{functions.settings.cache_dir}/repos/{self.name}/sha256')
+        #self.download_link(f"available-packages/sha256", f'{functions.settings.cache_dir}/repos/{self.name}/sha256')
         self.download_link(f"available-packages/versions", f'{functions.settings.cache_dir}/repos/{self.name}/versions')
         # reinit
         self.__init__(self.name, self.url)
