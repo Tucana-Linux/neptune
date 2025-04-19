@@ -107,9 +107,11 @@ function make_mock_package() {
   echo "$pkgname $date" > "$pkgname"/tests/"$pkgname"/"$pkgname"
   if [[ $repo == "1" ]]; then
     echo "$depends" > $REPO_DIR/depend/depend-$pkgname
+    sed "/^$pkgname:/d" $REPO_DIR/available-packages/versions
     cd $REPO_DIR/depend/ || exit
   elif [[ $repo == "2" ]]; then
     echo "$depends" > $REPO2_DIR/depend/depend-$pkgname
+    sed "/^$pkgname:/d" $REPO2_DIR/available-packages/versions
     cd $REPO2_DIR/depend/ || exit
   else
     echo "TEST ERROR, REPO not defined for package $pkgname"
