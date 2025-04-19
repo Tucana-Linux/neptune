@@ -539,8 +539,6 @@ function update_test() {
   make_mock_package "libupdate" "" "" "" "1" "1.0.0"
   make_mock_package "libupdatenew" "" "" "" "1" "1.0.0"
   chroot $CHROOT /bin/bash -c "neptune sync"
-  # TODO When doing integrity checking check to see how you are going to resolve new packages always updating
-  cp $CHROOT/var/lib/neptune/cache/sha256 $CHROOT/var/lib/neptune/current
   chroot $CHROOT /bin/bash -c "neptune install --y update-test-root"
   if [[ $? != 0 ]]; then
     echo "Test failed: Could not install package"
