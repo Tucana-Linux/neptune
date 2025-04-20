@@ -1,4 +1,6 @@
 #!/bin/bash
+# TODO Version Normalizer Test
+# TODO Config settings test for loglevels
 REPO="http://192.168.1.143:88"
 # DO NOT CHANGE
 TEMP_DIR="$HOME/neptune-tests"
@@ -77,6 +79,7 @@ system-settings:
   install_path: "/"
   yes_mode_by_default: false
   stream_chunk_size: 8192
+  loglevel: 10
 EOF
 cat > $CHROOT/etc/neptune/repositories.yaml << "EOF"
 repositories:
