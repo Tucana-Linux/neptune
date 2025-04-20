@@ -19,6 +19,7 @@ def check_for_updates():
       best_repo = functions.find_repo_with_best_version(package)
       best_ver = best_repo.get_package_ver(package)
       logging.debug(f"Best version for {package} is {best_ver} from {best_repo.name}")
+      logging.debug(f"Current version of {package} is {functions.versions[package]}")
       if Version(functions.version_normalizer(best_ver)) > Version(functions.version_normalizer(functions.versions[package])):
          updates.append(package)
    

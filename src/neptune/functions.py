@@ -294,7 +294,7 @@ def remove_package(package):
    # Sed's are easier to understand
    # it's removed from wanted in remove.py
    subprocess.run(f"sed -i '/^{package}$/d' {settings.lib_dir}/installed_package" , shell=True)
-   subprocess.run(f"sed -i '/^{package}:.*$/d' {settings.lib_dir}/version" , shell=True)
+   subprocess.run(f"sed -i '/^{package}:.*$/d' {settings.lib_dir}/versions" , shell=True)
 
 # precondition new_file_list is a .list with the new files
 def remove_old_files(package, new_file_list):
