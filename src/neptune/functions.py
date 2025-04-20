@@ -126,9 +126,15 @@ def update_files(package):
 def version_normalizer(version:str) -> str:
    #version = re.sub(r"^[^\d]+", "", version)
    #version = re.sub(r"[a-zA-Z]", ".", version)
-   version = re.sub(r"[a-zA-Z]", "", version)
+   #version = re.sub(r"[a-zA-Z]", "", version)
    # Replace underscores and hyphens with dots
-   version = version.replace("_", ".").replace("-", ".")
+   #version = version.replace("_", ".").replace("-", ".")
+   # 1. Remove leading non-digit characters
+   version = re.sub(r'^[^\d]+', '', version)
+   # 2. Replace underscores and hyphens with dots
+   version = re.sub(r'[_-]', '.', version)
+   # 3. Remove any remaining letters
+   version = re.sub(r'[a-zA-Z]', '', version)
    return version 
 
 
