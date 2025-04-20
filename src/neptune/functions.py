@@ -1,6 +1,7 @@
 #!/bin/python3
 import logging
 import re
+from typing import List, Set
 from neptune.classes import Repository
 from packaging.version import Version
 import shutil
@@ -32,11 +33,9 @@ clear='\033[K'
 #lib_dir = f'{settings.install_path}/var/lib/neptune'
 #cache_dir = f'{settings.install_path}/{lib_dir}/cache'
 postinstalls = []
-packages = []
-packages_set = set()
 operation = ""
 
-logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 try:
    installed_packages = set(open(f"{settings.lib_dir}/installed_package", "r").read().splitlines())
@@ -235,15 +234,11 @@ def check_if_package_installed(package, check):
       return False
    return package in installed_packages
 
-def get_depends(temp_packages, check_installed):
-   if len(temp_packages) == 0:
-      global packages
-      packages = [*packages_set]
-      return [*packages_set]
+def get_depends(temp_packages: List[str], check_installed: bool, processing_set: Set[str] = set()):
    for package in temp_packages:
       # the check_installed is to avoid mutliple functions or ifs, it just makes check_if_package_installed return false if it is false.
-      if not (package in packages_set or check_if_package_installed(package, check_installed)):
-         packages_set.add(package)
+      if not (package in processing_set or check_if_package_installed(package, check_installed)):
+         processing_set.add(package)
          try:
             depends=[]
             repo = find_repo_with_best_version(package).name
@@ -254,10 +249,13 @@ def get_depends(temp_packages, check_installed):
             continue
          # Validate then recurse
          logging.debug(f"{package} has depends {depends}")
+         logging.debug(f"Current packages set: {processing_set}")
          if not check_if_packages_exist(depends):
+            logging.critical(f"Error: Dependencies for {package} could not be found: depends: {depends}, this is a repository bug, please report to your repo admin. The unavailable package in question is the one shown in the line above this message")
             sys.exit(1)
-         get_depends(depends, check_installed)
-   return packages_set
+         get_depends(depends, check_installed, processing_set=processing_set)
+   packages = [*processing_set] 
+   return packages
 
 
 def recalculate_system_depends():

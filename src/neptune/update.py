@@ -1,3 +1,4 @@
+import logging
 import subprocess
 import sys
 import os
@@ -16,7 +17,9 @@ def check_for_updates():
       if not functions.check_if_packages_exist([package]):
          continue
       best_repo = functions.find_repo_with_best_version(package)
-      if Version(functions.version_normalizer(best_repo.get_package_ver(package))) > Version(functions.version_normalizer(functions.versions[package])):
+      best_ver = best_repo.get_package_ver(package)
+      logging.debug(f"Best version for {package} is {best_ver} from {best_repo.name}")
+      if Version(functions.version_normalizer(best_ver)) > Version(functions.version_normalizer(functions.versions[package])):
          updates.append(package)
    
    return updates
