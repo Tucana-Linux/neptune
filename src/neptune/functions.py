@@ -35,7 +35,7 @@ clear='\033[K'
 postinstalls = []
 operation = ""
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=settings.debug_level)
 
 try:
    installed_packages = set(open(f"{settings.lib_dir}/installed_package", "r").read().splitlines())
