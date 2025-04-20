@@ -5,13 +5,16 @@ system-settings:
   yes_mode_by_default: false
   stream_chunk_size: 8192
   # For any interim errors like losing internet in the middle
-  # it will turn the error into warning (cli flag --no-error)
   continue_on_error: false
   # Mostly for sync, it will automatically delete any repo-cache data for
   # repos that refuse connection for any reason, otherwise it will error
-  # (cli flag --ignore-nonfunctional-repos
   ignore_no_response_repos: false
-  # sync on install and update without typing neptune sync (cli flag --sync)
-  autosync: true
-  # valid options [info] (all) [warning] (errors & warnings) [errors] (errors) 
-  loglevel: warning
+  # sync on install and update without typing neptune sync (cli flag --sync) -- to be implemented
+  #autosync: true
+  # NOTSET=0
+  # DEBUG=10
+  # INFO=20
+  # WARN=30
+  # ERROR=40
+  # CRITICAL=50
+  loglevel: 30
