@@ -68,4 +68,6 @@ def bootstrap():
          print("Aborting")
          sys.exit(0)
    functions.install_packages(packages, "install")
+   with open(f'{settings.lib_dir}/wanted_packages', 'a') as wanted_packages:
+      wanted_packages.write("base" + "\n")
 

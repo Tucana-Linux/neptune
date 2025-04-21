@@ -20,5 +20,4 @@ def install():
    functions.install_packages(packages_to_install, "install")
    for package in functions.arguments:
       with open(f'{functions.settings.lib_dir}/wanted_packages', 'a') as wanted_packages:
-         # you cannot upgrade base
          wanted_packages.write(package + "\n")
