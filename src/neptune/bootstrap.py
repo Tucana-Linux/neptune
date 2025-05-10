@@ -1,16 +1,25 @@
-from pathlib import Path
+import logging
 import subprocess
 import sys
 import os
 import neptune
-from neptune import functions, sync
+from neptune.classes.Frontend import Frontend
 from neptune.classes.NeptuneSettings import NeptuneSettings
+from neptune.classes.System import System
 
 # This runs completely standalone from __init__ and therefore a lot of functions are repeated
 # TODO fix this garbage
+
+if os.geteuid() != 0:
+   logging.error("This package manager must be run as root")
+   sys.exit()
+
+
 arguments = list(sys.argv)
 arguments.pop(0)
-settings = NeptuneSettings()
+system = System()
+frontend = Frontend(system)
+settings = system.settings
 path=""
 def parse_arguments():
   valid_cli_arguments = ["--y"]
@@ -45,8 +54,8 @@ def create_inital_files():
 
 
 def bootstrap():
-   neptune.parse_config()
-   neptune.parse_repos()
+   settings.parse_config()
+   settings.parse_repos()
    parse_arguments()
    settings.install_path = path
    settings.run_postinst = False
@@ -57,17 +66,17 @@ def bootstrap():
       sys.exit(1)
    create_inital_files()
    # This sync would sync the system about to be bootstrapped which isn't advisable.
-   sync()
+   frontend.sync()
 
    print("Getting dependencies")
-   packages=functions.get_depends(["base"], check_installed=False)
-   if not functions.settings.yes_mode:
+   packages=system.utils.get_depends(["base"], check_installed=False)
+   if not settings.settings.yes_mode:
       print(f"Packages to install: {" ".join(packages)}") 
       confirmation=input(f"You are about to bootstrap {path}, would you like to continue? [Y/n] ")
       if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
          print("Aborting")
          sys.exit(0)
-   functions.install_packages(packages, "install")
+   system.install_packages(packages, "install")
    with open(f'{settings.lib_dir}/wanted_packages', 'a') as wanted_packages:
       wanted_packages.write("base" + "\n")
 
