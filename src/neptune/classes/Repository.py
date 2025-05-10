@@ -6,14 +6,14 @@ import sys
 import requests
 
 # only for the type decl
-from neptune.classes.NeptuneSettings import NeptuneSettings
 
 
 class Repository:
-    def __init__(self, name: str, url: str, settings: NeptuneSettings):
+    def __init__(self, name: str, url: str, settings):
         self.name : str = name
         self.url : str = url
-        self.settings: NeptuneSettings = settings
+        # type decl causes circular dependency # TODO fix this
+        self.settings = settings
         if not (len(self.name) >= 1 and len(self.url) >= 1) :
            logging.critical("Configuration error with repos")
            sys.exit(1)
@@ -97,7 +97,7 @@ class Repository:
         #self.download_link(f"available-packages/sha256", f'{self.settings.cache_dir}/repos/{self.name}/sha256')
         self.download_link(f"available-packages/versions", f'{self.settings.cache_dir}/repos/{self.name}/versions')
         # reinit
-        self.__init__(self.name, self.url)
+        self.__init__(self.name, self.url, self.settings)
 
     def check_if_package_exists(self, package) -> bool:
        return package in self.available_packages

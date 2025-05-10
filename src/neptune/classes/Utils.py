@@ -24,7 +24,7 @@ class Utils:
     def __init__(self, settings: NeptuneSettings):
         self.settings = settings
 
-    def version_normalizer(version:str) -> str:
+    def version_normalizer(self, version:str) -> str:
        #version = re.sub(r"^[^\d]+", "", version)
        #version = re.sub(r"[a-zA-Z]", ".", version)
        #version = re.sub(r"[a-zA-Z]", "", version)

@@ -52,7 +52,7 @@ class Frontend:
        self.system.install_packages(arguments, reinstalling=True)
 
     def update(self):
-       updates = self.system.utils.check_for_updates()
+       updates = self.system.utils.check_for_updates(installed_packages=self.system.installed_packages, versions=self.system.versions)
        recalculated_depends = self.system.recalculate_system_depends()
        install = recalculated_depends[0]
        remove = recalculated_depends[1]
@@ -89,7 +89,7 @@ class Frontend:
           if not (package in wanted_packages):
              print(f"{package} was installed as a dependency of another package, it can not be removed sanely")
              sys.exit(1)
-       to_remove = self.system.utils.calculate_removed_dependencies(self.system.settings.arguments)
+       to_remove = self.system.utils.calculate_removed_dependencies(self.system.settings.arguments, self.system.wanted_packages, self.system.installed_packages)
        if not self.system.settings.yes_mode:
           print(f"Packages to be removed: {" ".join(to_remove)}")
           confirmation=input(f"{len(to_remove)} packages are queued to remove, would you like to continue? [Y/n] ")

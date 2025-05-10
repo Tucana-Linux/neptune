@@ -15,10 +15,20 @@ from neptune.classes.Utils import Utils
 
 
 class System:
-    def __init__(self):
-        self.settings = NeptuneSettings()
+     
+
+    '''
+    General rule of thumb is that all functions that can modify the 
+    system live here. Other than that functions that virtually can't
+    work without the system being initalized (like recalculate_system_dependencies)
+    are also in this class
+    '''
+
+    def __init__(self, settings: NeptuneSettings):
+        self.settings : NeptuneSettings = settings
         self.postinstalls = []
         self.utils = Utils(self.settings)
+        self.wanted_packages=[]
 
         try:
            self.installed_packages = set(open(f"{self.settings.lib_dir}/installed_package", "r").read().splitlines())
@@ -28,6 +38,8 @@ class System:
            logging.critical("Unless you are installing Tucana by-hand (in which case run sync), you have a serious problem")
            logging.critical("The installed_packages or versions file is missing, please correct")
            sys.exit(1)
+        if os.path.isfile(f"{self.settings.lib_dir}/wanted_packages"):
+           self.wanted_packages = set(open(f"{self.settings.lib_dir}/wanted_packages", "r").read().splitlines())
 
     def postinst(self):
        for package in self.postinstalls:
@@ -36,7 +48,7 @@ class System:
           subprocess.run(f'rm -f /tmp/{package}-postinst', shell=True)
    
 
-    def check_for_and_delete(path_to_delete: str) -> None:
+    def check_for_and_delete(self, path_to_delete: str) -> None:
        # in case more logic is needed later
        subprocess.run(f'rm -f {path_to_delete}', shell=True)
 
@@ -64,7 +76,7 @@ class System:
        wanted_packages = set(open(f"{self.settings.lib_dir}/wanted_packages", "r").read().splitlines())
        logging.debug(f"Recalculating system dependencies, Current wanted packages: {wanted_packages} ")
        # no installed packages here because it's not needed check_installed is already false
-       depends_of_wanted_packages = Utils.get_depends(temp_packages=wanted_packages, check_installed=False)
+       depends_of_wanted_packages = self.utils.get_depends(temp_packages=wanted_packages, check_installed=False)
 
        install = [pkg for pkg in depends_of_wanted_packages if pkg not in self.installed_packages]
        remove += [pkg for pkg in self.installed_packages if pkg not in depends_of_wanted_packages]
@@ -105,11 +117,11 @@ class System:
              folder_path = os.path.join(self.settings.install_path, os.path.join(root, dir_name).lstrip('.'))
              os.makedirs(folder_path, exist_ok=True)
           for file in files:
-             if file in ('postinst', 'depends', 'depend', 'make-depend', 'make-depends', 'preinst', 'prerm', 'preupdate', 'backup', 'version'):
-                continue
              file_path = os.path.join(self.settings.install_path, os.path.join(root, file).lstrip('.'))
              src_path = os.path.join(root, file)
              dest_path = os.path.join(self.settings.install_path, os.path.join(root, file).lstrip('.'))
+             if dest_path in ('/postinst', '/depends', '/depend', '/make-depend', '/make-depends', '/preinst', '/prerm', '/preupdate', '/backup', '/version'):
+                continue
              # TODO Implement logging Rahul Chandra <rahul@tucanalinux.org>
              if (file_path not in backup) or (not os.path.exists(file_path)):
                 os.makedirs(os.path.dirname(dest_path), exist_ok=True)
@@ -130,10 +142,10 @@ class System:
        logging.info(f"Generating File List for {package}")
 
        file_list=self.utils.generate_file_list(package)
-       if os.path.exists(f"{self.settings.lib_dir}/file-lists/{package}.list"):
+       if os.path.isfile(f"{self.settings.lib_dir}/file-lists/{package}.list"):
           self.remove_old_files(package, file_list)
 
-       open(f'{self.settings.lib_dir}/file-lists/{package}.list').write('\n'.join(file_list))
+       open(f'{self.settings.lib_dir}/file-lists/{package}.list', 'w').write('\n'.join(file_list))
 
        console_line.update(f"{package} Installing...")
        self.install_files(package)

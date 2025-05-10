@@ -17,7 +17,8 @@ if os.geteuid() != 0:
 
 arguments = list(sys.argv)
 arguments.pop(0)
-system = System()
+base_settings = NeptuneSettings(arguments)
+system = System(base_settings)
 frontend = Frontend(system)
 settings = system.settings
 path=""

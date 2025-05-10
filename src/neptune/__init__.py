@@ -4,12 +4,15 @@ import os
 import sys
 
 from neptune.classes.Frontend import Frontend
+from neptune.classes.NeptuneSettings import NeptuneSettings
 from neptune.classes.Repository import Repository
 from neptune.classes.System import System
 
 if os.geteuid() != 0:
    logging.error("This package manager must be run as root")
    sys.exit()
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 def run_operation(operation: str, frontend: Frontend):
    match operation:
@@ -26,10 +29,13 @@ def run_operation(operation: str, frontend: Frontend):
 
 def main():
    # also initalizes all the functions variables
-   system = System()
+   logging.debug(f"Arguments: {sys.argv}")
+   settings = NeptuneSettings(arguments=sys.argv)
+   system = System(settings)
    frontend = Frontend(system)
    system.settings.parse_config()
    system.settings.parse_repos()
    system.settings.parse_arguments()
    # operation always defined will exit if not
+   logging.debug(f"Operation: {system.settings.operation}")
    run_operation(system.settings.operation, frontend)

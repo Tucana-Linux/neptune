@@ -62,6 +62,8 @@ function setup() {
   mkdir -p $REPO_DIR/{packages,depend,available-packages}
   mkdir -p $REPO2_DIR/{packages,depend,available-packages}
   touch $CHROOT/var/lib/neptune/versions
+  touch $REPO_DIR/available-packages/versions
+  touch $REPO2_DIR/available-packages/versions
   cd $GIT_LOCATION
   python3 -m build --wheel --skip-dependency-check
   if ! python3 -m installer --destdir=$CHROOT/neptune-test dist/*.whl; then

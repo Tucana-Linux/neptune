@@ -5,21 +5,11 @@ from neptune.classes.Repository import Repository
 
 
 class NeptuneSettings:
-    # I really hate this method but I need a global data class
-    _instance = None
 
-    # common cheat, if a new instance is created just return the old one
-    def __new__(cls):
-        if cls._instance is None:
-        # I never thought I would say this but it looks better in java then in python
-            cls._instance = super(NeptuneSettings, cls).__new__(cls)
-            cls._instance.init()
-        return cls._instance
-    # not true constructor as it would attempt to call it every time then
-    def init(self):
+    def __init__(self, arguments: list[str]):
         #print("Reinitalizing")
         # TODO Consider removing install_path
-        self.arguments : list[str] = sys.argv
+        self.arguments : list[str] = arguments
         self.install_path = "/"
         self.yes_mode = False
         self.run_postinst = True
@@ -29,7 +19,6 @@ class NeptuneSettings:
         self.repositories: dict[str, Repository] = {}
         self.lib_dir = f"{self.install_path}/var/lib/neptune/"
         self.cache_dir = f"{self.install_path}/var/lib/neptune/cache"
-        self.arguments : list[str] = [] 
 
     def parse_config(self) -> None:
        try:
@@ -63,13 +52,15 @@ class NeptuneSettings:
           sys.exit(1)
        try:
           for repo_name, repo_data in repos['repositories'].items():
-             repo_object = Repository(repo_name, repo_data['url'])
+             repo_object = Repository(repo_name, repo_data['url'], self)
              self.repositories[repo_name] = repo_object
        except Exception as e:
              logging.error(f"Error parsing repositories file exception {e}")
 
     def parse_arguments(self):
       valid_cli_arguments = ["--y", "--no-depend"]
+      # get rid of the first 1 (always the binary name)
+      self.arguments.pop(0)
 
       if len(self.arguments) == 0 or (self.arguments[0] not in ("install", "update", "sync", "reinstall", "remove")):
          usage="""Usage: neptune [operation] [flags] [packages (if applicable)]
@@ -93,8 +84,8 @@ class NeptuneSettings:
         if valid_cli_arguments[argindex] in self.arguments:
           match argindex:
              case 0:
-                self.settings.yes_mode = True
+                self.yes_mode = True
              case 1:
-                self.settings.no_depend_mode = True
+                self.no_depend_mode = True
           # How many packages could you possibly pass? probably fine to use remove
           self.arguments.remove(valid_cli_arguments[argindex])
