@@ -182,7 +182,11 @@ class System:
    
        if not reinstalling:
           open(f'{self.settings.lib_dir}/installed_package', 'a').write(package + "\n")
+          open(f'{self.settings.lib_dir}/versions', 'w').writelines(
+              line for line in open(f'{self.settings.lib_dir}/versions') if not line.startswith(f"{package}:")
+          )
           open(f'{self.settings.lib_dir}/versions', 'a').write(f"{package}: {repo.get_package_ver(package)}" + "\n")
+
        subprocess.run(f'rm -rf {package}', shell=True)
        subprocess.run(f'rm -f {package}.tar.xz', shell=True)
 

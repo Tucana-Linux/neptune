@@ -113,19 +113,20 @@ function make_mock_package() {
   echo "$pkgname $date" > "$pkgname"/tests/"$pkgname"/"$pkgname"
   # symlink for testing
   ln -sfv /tests/"$pkgname"/"$pkgname" "$pkgname"/tests/"$pkgname"/"$pkgname"-sym
-  if [[ $repo == "" ]]; then
-    echo "TEST CODE ERROR, REPO not defined for package $pkgname"
+  if [[ $repo == "1" ]]; then
+    echo "$depends" > $REPO_DIR/depend/depend-$pkgname
+    sed -i "/^$pkgname:/d" $REPO_DIR/available-packages/versions
+    cd $REPO_DIR/depend/ || exit
+  elif [[ $repo == "2" ]]; then
+    echo "$depends" > $REPO2_DIR/depend/depend-$pkgname
+    sed -i "/^$pkgname:/d" $REPO2_DIR/available-packages/versions
+    cd $REPO2_DIR/depend/ || exit
+  else
+    echo "TEST ERROR, REPO not defined for package $pkgname"
     exit 1
   fi
-  # get depds in a yaml friendly format
-  formatted_deps=$(
-    printf '['
-    for dep in $deps; do
-      printf '"%s",' "depend-${dep#depend}"
-    done | sed 's/,$//'
-    printf ']'
-  )
 
+  tar -cvzpf depends.tar.xz *
   cd - || exit
   if [[ $use_postinst == "true" ]]; then
     cat > "$pkgname"/postinst << EOF
@@ -157,16 +158,11 @@ EOF
   if [[ $repo == "2" ]]; then
     cd $REPO2_DIR/packages || exit
   fi
-  # There is only going to be like 20 tiny packages, just loop through them all instead of integrating rebuild-repo.sh
-  for package in $(ls | sed 's/\.tar\.xz/'); do
-    yq eval "
-package.depends =  $formatted_deps|
-package.download_size = $(du -s $package.tar.xz)|
-package.installed_size = $(gzip -l $package.tar.xz)
-" - >> ../available-packages/packages
-  done
 
-  # no file list in repo, only used for pkgs.tucanalinux.org, neptune does client side generation
+  ls | sed 's/.tar.xz//g' > ../available-packages/packages
+  echo "$pkgname: $version" >> ../available-packages/versions
+  sort ../available-packages/versions > ../available-packages/versions-temp
+  mv ../available-packages/versions-temp ../available-packages/versions
   cd - || exit
 }
 
