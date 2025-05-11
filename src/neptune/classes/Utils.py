@@ -102,7 +102,7 @@ class Utils:
           installed_packages = []
 
        for package in temp_packages:
-          if not (package in processing_set or (check_installed and package in installed_packages)):
+          if not (package in processing_set or (check_installed and not (package in installed_packages))):
              processing_set.add(package)
              try:
                 depends=[]
