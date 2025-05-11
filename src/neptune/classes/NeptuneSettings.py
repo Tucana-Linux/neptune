@@ -41,7 +41,6 @@ class NeptuneSettings:
        logging.basicConfig(stream=sys.stdout, level=self.debug_level)
 
 
-
     def parse_repos(self) -> None:
        try:
           with open('/etc/neptune/repositories.yaml', 'r') as repo_file:

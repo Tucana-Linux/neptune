@@ -205,13 +205,18 @@ class System:
              )
 
        with Live(get_status_group(), refresh_per_second=10, console=console) as live:
+
+          if not self.utils.check_if_packages_exist(packages):
+            logging.critical("Could not find package, warning being treated as error, cannot continue")
+            sys.exit(1)
+
           for package in packages:
-             # TODO maybe find a way of avoiding doing this twice <rahul@tucanalinux.org>
              repo = self.utils.find_repo_with_best_version(package)
              self.install_package(package, repo, reinstalling, console_line=current_line)
              status_lines.append(rf" {package} \[[bold blue]✔[/bold blue]]")
              progress.update(task, advance=1)
              live.update(get_status_group())
+
        # only needed for bootstrap postinst
        if self.settings.run_postinst:
           self.postinst()

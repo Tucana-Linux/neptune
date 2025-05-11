@@ -17,7 +17,9 @@ class Frontend:
        if not len(arguments) > 0:
           print("Usage: neptune-install {{PACKAGES}}") 
           sys.exit(1)
-       self.system.utils.check_if_packages_exist(arguments)
+       if not self.system.utils.check_if_packages_exist(arguments):
+          print("Packages not found")
+          sys.exit(1)
        print("Getting dependencies")
        packages_to_install=self.system.utils.get_depends(arguments, check_installed=True, installed_packages=self.system.installed_packages)
        if len(packages_to_install) == 0:

@@ -12,7 +12,6 @@ if os.geteuid() != 0:
    logging.error("This package manager must be run as root")
    sys.exit()
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 def run_operation(operation: str, frontend: Frontend):
    match operation:

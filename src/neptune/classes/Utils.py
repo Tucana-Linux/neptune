@@ -102,7 +102,6 @@ class Utils:
           installed_packages = []
 
        for package in temp_packages:
-          # the check_installed is to avoid mutliple functions or ifs, it just makes check_if_package_installed return false if it is false.
           if not (package in processing_set or (check_installed and package in installed_packages)):
              processing_set.add(package)
              try:
