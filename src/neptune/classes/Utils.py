@@ -102,7 +102,7 @@ class Utils:
           installed_packages = set()
 
        for package in temp_packages:
-          if (not package in processing_set) and (check_installed and not (package in installed_packages)):
+          if (not package in processing_set) or (check_installed and not (package in installed_packages)):
              processing_set.add(package)
              try:
                 depends=[]
@@ -122,7 +122,7 @@ class Utils:
        packages = [*processing_set] 
        return packages
 
-    def check_for_updates(self, installed_packages : list[str], versions: dict[str, str]) -> list[str]:
+    def check_for_updates(self, installed_packages : set[str], versions: dict[str, str]) -> list[str]:
        updates = []
 
        for package in installed_packages:
