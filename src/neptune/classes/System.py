@@ -206,10 +206,6 @@ class System:
 
        with Live(get_status_group(), refresh_per_second=10, console=console) as live:
 
-          if not self.utils.check_if_packages_exist(packages):
-            logging.critical("Could not find package, warning being treated as error, cannot continue")
-            sys.exit(1)
-
           for package in packages:
              repo = self.utils.find_repo_with_best_version(package)
              self.install_package(package, repo, reinstalling, console_line=current_line)

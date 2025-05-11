@@ -93,16 +93,16 @@ class Utils:
              return False
        return True
     
-    def get_depends(self, temp_packages: list[str], check_installed: bool, installed_packages: Optional[list[str]] = None,  processing_set: Optional[set[str]] = None):
+    def get_depends(self, temp_packages: list[str], check_installed: bool, installed_packages: Optional[set[str]] = None,  processing_set: Optional[set[str]] = None):
        # This one should start none
-       if processing_set is None:
+       if processing_set == None:
           processing_set = set()
        # this one may be null (recalculating system depends)
-       if installed_packages is None:
-          installed_packages = []
+       if installed_packages == None:
+          installed_packages = set()
 
        for package in temp_packages:
-          if not (package in processing_set or (check_installed and not (package in installed_packages))):
+          if (not package in processing_set) and (check_installed and not (package in installed_packages)):
              processing_set.add(package)
              try:
                 depends=[]
@@ -118,7 +118,7 @@ class Utils:
              if not self.check_if_packages_exist(depends):
                 logging.critical(f"Error: Dependencies for {package} could not be found: depends: {depends}, this is a repository bug, please report to your repo admin. The unavailable package in question is the one shown in the line above this message")
                 sys.exit(1)
-             self.get_depends(depends, check_installed, processing_set=processing_set)
+             self.get_depends(depends, check_installed, processing_set=processing_set, installed_packages=installed_packages)
        packages = [*processing_set] 
        return packages
 
