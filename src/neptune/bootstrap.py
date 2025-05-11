@@ -71,13 +71,13 @@ def bootstrap():
 
    print("Getting dependencies")
    packages=system.utils.get_depends(["base"], check_installed=False)
-   if not settings.settings.yes_mode:
+   if not settings.yes_mode:
       print(f"Packages to install: {" ".join(packages)}") 
       confirmation=input(f"You are about to bootstrap {path}, would you like to continue? [Y/n] ")
       if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
          print("Aborting")
          sys.exit(0)
-   system.install_packages(packages, "install")
+   system.install_packages(packages) 
    with open(f'{settings.lib_dir}/wanted_packages', 'a') as wanted_packages:
       wanted_packages.write("base" + "\n")
 

@@ -111,6 +111,8 @@ function make_mock_package() {
   # Looks weird but essentially just to make sure that file operations are working throughout
   date=$(date)
   echo "$pkgname $date" > "$pkgname"/tests/"$pkgname"/"$pkgname"
+  # symlink for testing
+  ln -sfv /tests/"$pkgname"/"$pkgname" "$pkgname"/tests/"$pkgname"/"$pkgname"-sym
   if [[ $repo == "1" ]]; then
     echo "$depends" > $REPO_DIR/depend/depend-$pkgname
     sed -i "/^$pkgname:/d" $REPO_DIR/available-packages/versions
@@ -331,7 +333,6 @@ function sync_test() {
   echo "Sync test passed"
   return 0
 }
-#function bootstrap_test() {}
 function install_test_no_depends() {
   make_mock_package "install-test" "" "" "" "1" "1.0.0"
 
@@ -349,6 +350,10 @@ function install_test_no_depends() {
   fi
   if [ ! -f $CHROOT/tests/install-test/install-test ]; then
     echo "Installation did not install the proper files"
+    return 1
+  fi
+  if [ ! -L $CHROOT/tests/install-test/install-test-sym ]; then
+    echo "Installation did not perserve or install symlink"
     return 1
   fi
   if [ ! -f $CHROOT/var/lib/neptune/file-lists/install-test.list ]; then
@@ -370,6 +375,7 @@ function install_test_no_depends() {
   echo "Tests passed"
   return 0
 }
+
 function install_test_with_depends() {
   # TODO Test circular dependency resolution Rahul Chandra <rahul@tucanalinux.org>
   make_mock_package "libtest" "" "" "" "1" "1.0.0"
@@ -630,9 +636,46 @@ function remove_test() {
 
   echo "remove_test passed successfully"
   return 0
-
-
 }
+
+function bootstrap_test() {
+  # Reset back to tucanalinux.org
+  cat > $CHROOT/etc/neptune/repositories.yaml << EOF
+repositories:
+  tucana-mainline:
+    url: "$REPO"
+EOF
+  chroot $CHROOT /bin/bash -c "neptune sync"
+  
+  chroot $CHROOT /bin/bash -c "mkdir -p /bootstrap"
+  if ! chroot $CHROOT /bin/bash -c "neptune-bootstrap /bootstrap --y"; then
+    echo "BOOTSTRAP TEST FAILED, Bootstrap exited with non-zero status code"
+    return 1
+  fi
+
+  if ! chroot $CHROOT/bootstrap /bin/bash -c "exit 0"; then
+    echo "Bootstrap chroot non-functional"
+    return 1
+  fi
+
+  if [ ! -f $CHROOT/bootstrap/var/lib/neptune/wanted_packages ]; then
+    echo "Wanted packages doesn't exist"
+    return 1
+  fi
+
+  if [ ! -f $CHROOT/bootstrap/var/lib/neptune/installed_package ]; then
+    echo "Installed package doesn't exist"
+    return 1
+  fi
+
+  if [ ! -f $CHROOT/bootstrap/var/lib/neptune/versions ]; then
+    echo "Installed package doesn't exist"
+    return 1
+  fi
+  return 0
+  
+}
+
 function run_test() {
   local test_function=$1
   local test_name=$2
@@ -640,6 +683,9 @@ function run_test() {
   $test_function >> "$test_name.log" 2>&1
   p_or_f "$test_name" "$?"
 }
+
+
+
 function run_tests() {
   # these are synchronous, meaning that if one fails the next one is likely to also fail, so it exits if any test fails
   chroot_setup
@@ -655,6 +701,7 @@ function run_tests() {
   run_test remove_test "Neptune Remove"
   run_test update_test "Neptune Update"
   run_test multi_repo_test "Neptune Multi-Repo Support"
+  run_test bootstrap_test "Neptune Bootstrap Test"
   echo "All Tests Passed"
 }
 run_tests

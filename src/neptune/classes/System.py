@@ -108,24 +108,49 @@ class System:
              self.remove_package(package)
              progress.update(remove_task, advance=1)
 
+    def copy2_perserve_links(self, src: str, dst: str) -> None:
+        shutil.copy2(src, dst, follow_symlinks=False) 
+    
+    def move_with_permissions(self, src_path: str, dest_path: str) -> None:
+        # shutil.move doesn't copy file metadata
+        stat_info=None
+        if not os.path.islink(src_path):
+          stat_info = os.stat(src_path)
+        shutil.move(src_path, dest_path, copy_function=self.copy2_perserve_links)
+        if stat_info != None:
+          os.chmod(dest_path, stat_info.st_mode)
+          os.chown(dest_path, stat_info.st_uid, stat_info.st_gid)
+        logging.debug(f"Moved {src_path} to {dest_path} with preserved permissions and ownership.")
+
+
     def install_files(self, package: str) -> None:
        # needed for updates & reinstalls
        os.chdir(f"{self.settings.cache_dir}/{package}")
        backup=self.utils.parse_backup_file(package)
-       for root, dirs, files in os.walk(f'.'):
-          for dir_name in dirs:
-             folder_path = os.path.join(self.settings.install_path, os.path.join(root, dir_name).lstrip('.'))
-             os.makedirs(folder_path, exist_ok=True)
+       logging.debug(f"Install Path to install {package} is {self.settings.install_path}")
+       for root, dirs, files in os.walk(f'.', followlinks=False):
+          for dir in dirs:
+             src_path = os.path.join(root, dir)
+             abs_path = os.path.join(root, dir)
+             # this is not redundant, os.join will ignore adding the install path if this is absolute
+             rel_path = os.path.relpath(abs_path, start='.')
+             dest_path = os.path.join(self.settings.install_path, rel_path)
+             if os.path.islink(src_path):
+                 self.move_with_permissions(src_path, dest_path)
+             else:
+                os.makedirs(dest_path, exist_ok=True)
           for file in files:
-             file_path = os.path.join(self.settings.install_path, os.path.join(root, file).lstrip('.'))
              src_path = os.path.join(root, file)
-             dest_path = os.path.join(self.settings.install_path, os.path.join(root, file).lstrip('.'))
-             if dest_path in ('/postinst', '/depends', '/depend', '/make-depend', '/make-depends', '/preinst', '/prerm', '/preupdate', '/backup', '/version'):
+             abs_path = os.path.join(root, file)
+             # this is not redundant, os.join will ignore adding the install path if this is absolute
+             rel_path = os.path.relpath(abs_path, start='.')
+             dest_path = os.path.join(self.settings.install_path, rel_path)
+             logging.debug(f"Destination path: {dest_path}")
+             if dest_path in (self.settings.install_path + '/postinst', '/depends', '/depend', '/make-depend', '/make-depends', '/preinst', '/prerm', '/preupdate', '/backup', '/version'):
                 continue
-             # TODO Implement logging Rahul Chandra <rahul@tucanalinux.org>
-             if (file_path not in backup) or (not os.path.exists(file_path)):
+             if (dest_path not in backup) or (not os.path.exists(dest_path)):
                 os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-                shutil.move(src_path, dest_path)
+                self.move_with_permissions(src_path, dest_path)
        os.chdir(self.settings.cache_dir)
 
     def install_package(self, package: str, repo: Repository, reinstalling: bool = False, console_line=None) -> None:
@@ -148,11 +173,13 @@ class System:
        open(f'{self.settings.lib_dir}/file-lists/{package}.list', 'w').write('\n'.join(file_list))
 
        console_line.update(f"{package} Installing...")
-       self.install_files(package)
-   
+
        if os.path.exists(f'{package}/postinst'):
           self.postinstalls.append(package)
           subprocess.run(f'cp {package}/postinst /tmp/{package}-postinst', shell=True)
+
+       self.install_files(package)
+   
        if not reinstalling:
           open(f'{self.settings.lib_dir}/installed_package', 'a').write(package + "\n")
           open(f'{self.settings.lib_dir}/versions', 'a').write(f"{package}: {repo.get_package_ver(package)}" + "\n")

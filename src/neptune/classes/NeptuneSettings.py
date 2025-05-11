@@ -38,6 +38,9 @@ class NeptuneSettings:
        except KeyError as e:
           logging.error(f"An unexpected value was found in {e}")
           sys.exit(1)
+       logging.basicConfig(stream=sys.stdout, level=self.debug_level)
+
+
 
     def parse_repos(self) -> None:
        try:
