@@ -587,7 +587,14 @@ function update_test() {
     echo "Test failed: New dependency not installed"
     return 1
   fi
-  echo "tests passed"
+
+  if ! cat $CHROOT/var/lib/neptune/versions | grep "update-test-root: 1.0.1"; then
+    echo "The versions file was not updated with the new version"
+  fi
+  if cat $CHROOT/var/lib/neptune/versions | grep "update-test-root: 1.0.0"; then
+    echo "Update left the old version of update-test-root in the versions file but deleted it from the system"
+  fi
+  echo "Update test passed"
   return 0
 
 }
