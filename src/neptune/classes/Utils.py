@@ -52,7 +52,7 @@ class Utils:
     def generate_file_list(self, package: str) -> list[str]:
         os.chdir(f'{self.settings.cache_dir}/{package}')
 
-        files = [f"/{p}" for p in Path('.').rglob('*') if p.is_file()]
+        files = [f"/{p}" for p in Path('.').rglob('*') if p.is_file() or p.is_symlink()]
         backup = self.parse_backup_file(package)
         if backup:
             files = [f for f in files if all(b not in f for b in backup)]
@@ -102,7 +102,7 @@ class Utils:
           installed_packages = set()
 
        for package in temp_packages:
-          if (not package in processing_set) or (check_installed and not (package in installed_packages)):
+          if (not package in processing_set) and (not check_installed or not (package in installed_packages)):
              processing_set.add(package)
              try:
                 depends=[]
@@ -138,13 +138,24 @@ class Utils:
    
        return updates
 
-    def calculate_removed_dependencies(self, 
-                                       packages_to_remove: list[str], 
-                                       current_wanted_packages : set[str], 
-                                       installed_packages : list[str]) -> list[str]:
-       future_wanted_packages = current_wanted_packages.copy()
-       for package in packages_to_remove:
-          future_wanted_packages.remove(package)
-       depends_of_wanted_packages = self.get_depends(future_wanted_packages, check_installed=False)
-       remove = [pkg for pkg in installed_packages if pkg not in depends_of_wanted_packages]
-       return remove
+    def check_if_packages_exist_return_packages(self, packages):
+       packages_no_exist = []
+       for package in packages:
+          if not self.check_if_package_exists(package):
+             subprocess.run(f'sed -i \'/{package}/d\' {self.settings.lib_dir}/wanted_packages', shell=True)
+             packages_no_exist.append(package)
+       return packages_no_exist
+
+    def recalculate_system_depends(self, wanted_packages: set[str], installed_packages: set[str]) -> list[list[str]]:
+       remove = []
+       # check to see if anything currently installed is no longer avaliable
+       remove.extend(self.check_if_packages_exist_return_packages(installed_packages))
+       logging.debug(f"Recalculating system dependencies, Current wanted packages: {wanted_packages} ")
+       # no installed packages here because it's not needed check_installed is already false
+       depends_of_wanted_packages = self.get_depends(temp_packages=wanted_packages, check_installed=False)
+
+       install = [pkg for pkg in depends_of_wanted_packages if pkg not in installed_packages]
+       remove += [pkg for pkg in installed_packages if pkg not in depends_of_wanted_packages]
+       logging.debug(f"Recalculator says to remove {remove}")
+       logging.debug(f"Recalculator says to install {install}")
+       return [install, remove]

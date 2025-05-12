@@ -55,7 +55,7 @@ class Frontend:
 
     def update(self):
        updates = self.system.utils.check_for_updates(installed_packages=self.system.installed_packages, versions=self.system.versions)
-       recalculated_depends = self.system.recalculate_system_depends()
+       recalculated_depends = self.system.utils.recalculate_system_depends(self.system.wanted_packages, self.system.installed_packages)
        install = recalculated_depends[0]
        remove = recalculated_depends[1]
    
@@ -73,40 +73,39 @@ class Frontend:
              print("Aborting")
              sys.exit(0)
        if len(install) > 0:
-          self.system.install_packages(install, "install")
-       self.system.install_packages(updates, "other")
+          self.system.install_packages(install)
+       self.system.install_packages(updates)
        if len(remove) > 0:
           self.system.remove_packages(remove)
 
     def remove(self):
        if not len(self.system.settings.arguments) > 0:
-          print("Usage: neptune-remove {{PACKAGES}}") 
+          print("Usage: neptune remove {{PACKAGES}}") 
           sys.exit(1)
-       # Only remove wanted packages
-       wanted_packages = set(open(f"{self.system.settings.lib_dir}/wanted_packages", "r").read().splitlines())
-       for package in self.system.settings.arguments:
+       packages_user_wants_removed : list[str] = self.system.settings.arguments
+       for package in packages_user_wants_removed:
           if not (package in self.system.installed_packages):
              print(f"{package} is not installed")
              sys.exit(0)
-          if not (package in wanted_packages):
+          if not (package in self.system.wanted_packages):
              print(f"{package} was installed as a dependency of another package, it can not be removed sanely")
              sys.exit(1)
-       to_remove = self.system.utils.calculate_removed_dependencies(self.system.settings.arguments, self.system.wanted_packages, self.system.installed_packages)
+       wanted_packages_without_the_ones_to_remove = self.system.wanted_packages.copy()
+       for package in packages_user_wants_removed:
+          wanted_packages_without_the_ones_to_remove.remove(package)
+
+       absolute_packages_to_remove : list[str] = self.system.utils.recalculate_system_depends(
+          wanted_packages_without_the_ones_to_remove, 
+          self.system.installed_packages)[1]
+
        if not self.system.settings.yes_mode:
-          print(f"Packages to be removed: {" ".join(to_remove)}")
-          confirmation=input(f"{len(to_remove)} packages are queued to remove, would you like to continue? [Y/n] ")
+          print(f"Packages to be removed: {" ".join(absolute_packages_to_remove)}")
+          confirmation=input(f"{len(absolute_packages_to_remove)} packages are queued to remove, would you like to continue? [Y/n] ")
           if not (confirmation=="y" or confirmation=="" or confirmation == "Y"):
              print("Aborting")
              sys.exit(0)
-       self.system.remove_packages(to_remove)
-       file_path = os.path.join(self.system.settings.lib_dir, "wanted_packages")
-       with open(file_path, "r") as f:
-           lines = f.readlines()
 
-       with open(file_path, "w") as f:
-           for line in lines:
-               if package not in line:
-                   f.write(line)
+       self.system.remove_packages(absolute_packages_to_remove)
 
     def sync(self):
        for _, repo in self.system.settings.repositories.items():

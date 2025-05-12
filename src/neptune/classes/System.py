@@ -20,8 +20,7 @@ class System:
     '''
     General rule of thumb is that all functions that can modify the 
     system live here. Other than that functions that virtually can't
-    work without the system being initalized (like recalculate_system_dependencies)
-    are also in this class
+    work without the system being initalized are also in this class
     '''
 
     def __init__(self, settings: NeptuneSettings):
@@ -60,31 +59,10 @@ class System:
        for file in to_remove:
           self.check_for_and_delete(file)
 
-    def recalculate_system_depends(self) -> list[list[str]]:
-       # duplicated function for a different purpose :( isinstance has too much of a performance penalty for my liking
-       def check_if_packages_exist_return_packages(packages):
-          packages_no_exist = []
-          for package in packages:
-             if not self.utils.check_if_package_exists(package):
-                subprocess.run(f'sed -i \'/{package}/d\' {self.settings.lib_dir}/wanted_packages', shell=True)
-                packages_no_exist.append(package)
-          return packages_no_exist
-       remove = []
-       # check to see if anything currently installed is no longer avaliable
-       remove.extend(check_if_packages_exist_return_packages(self.installed_packages))
-       # this isn't global because sync doesn't create this file
-       wanted_packages = set(open(f"{self.settings.lib_dir}/wanted_packages", "r").read().splitlines())
-       logging.debug(f"Recalculating system dependencies, Current wanted packages: {wanted_packages} ")
-       # no installed packages here because it's not needed check_installed is already false
-       depends_of_wanted_packages = self.utils.get_depends(temp_packages=wanted_packages, check_installed=False)
-
-       install = [pkg for pkg in depends_of_wanted_packages if pkg not in self.installed_packages]
-       remove += [pkg for pkg in self.installed_packages if pkg not in depends_of_wanted_packages]
-       return [install, remove]
 
     def remove_package(self, package: str) -> None:
-       # Depend checking is handled in the remove.py file, this is actually removing the program
-       # therefore use this function with caution
+       # This does NOT do depend checking. This will remove ANY package given to it even if it required for system operation.
+       # Use recalculate_system_depends BEFORE using this package
        try:
           files = set(open(f"{self.settings.lib_dir}/file-lists/{package}.list", "r").read().splitlines())
        except FileNotFoundError:
@@ -97,6 +75,7 @@ class System:
        # Sed's are easier to understand
        # it's removed from wanted in remove.py
        subprocess.run(f"sed -i '/^{package}$/d' {self.settings.lib_dir}/installed_package" , shell=True)
+       subprocess.run(f"sed -i '/^{package}$/d' {self.settings.lib_dir}/wanted_packages" , shell=True)
        subprocess.run(f"sed -i '/^{package}:.*$/d' {self.settings.lib_dir}/versions" , shell=True)
 
     def remove_packages(self, packages: list[str]):
@@ -181,11 +160,21 @@ class System:
        self.install_files(package)
    
        if not reinstalling:
-          open(f'{self.settings.lib_dir}/installed_package', 'a').write(package + "\n")
-          open(f'{self.settings.lib_dir}/versions', 'w').writelines(
-              line for line in open(f'{self.settings.lib_dir}/versions') if not line.startswith(f"{package}:")
-          )
-          open(f'{self.settings.lib_dir}/versions', 'a').write(f"{package}: {repo.get_package_ver(package)}" + "\n")
+          # add to installed_package
+          with open(f'{self.settings.lib_dir}/installed_package', 'a') as f:
+              f.write(package + "\n")
+
+          versions_path = f'{self.settings.lib_dir}/versions'
+          # remove old version
+          with open(versions_path, 'r') as f:
+             lines = f.readlines()
+          lines = [line for line in lines if not line.startswith(f"{package}:")]
+          with open(versions_path, 'w') as f:
+              f.writelines(lines)
+
+          # add new version
+          with open(versions_path, 'a') as f:
+              f.write(f"{package}: {repo.get_package_ver(package)}\n")
 
        subprocess.run(f'rm -rf {package}', shell=True)
        subprocess.run(f'rm -f {package}.tar.xz', shell=True)

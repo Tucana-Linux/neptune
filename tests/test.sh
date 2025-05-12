@@ -395,6 +395,12 @@ function install_test_with_depends() {
     echo "Depend is wrongly in wanted_packages"
     return 1
   fi
+  make_mock_package "install-test-depend" "install-test-depend" "" "" "1" "1.0.1"
+  chroot $CHROOT /bin/bash -c "neptune install --y install-test-depend"
+  if cat $CHROOT/tests/install-test-depend/version | grep "1.0.1"; then
+    echo "Install attempted to install an already installed package"
+    return 1
+  fi
   echo "Tests passed"
   return 0
 
@@ -622,6 +628,11 @@ function remove_test() {
 
   if [ -f "$CHROOT/tests/remove-test-depend/remove-test-depend" ]; then
     echo "Test failed: remove-test-depend files still present after removal"
+    return 1
+  fi
+
+  if [ -L "$CHROOT/tests/remove-test-depend/remove-test-depend-sym" ]; then
+    echo "Test failed: remove-test-depend symlink still present after removal"
     return 1
   fi
   
