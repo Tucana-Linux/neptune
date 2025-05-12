@@ -39,3 +39,4 @@ def main():
    # operation always defined will exit if not
    logging.debug(f"Operation: {system.settings.operation}")
    run_operation(system.settings.operation, frontend)
+   system.save_state()

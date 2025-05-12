@@ -51,7 +51,7 @@ class System:
        # in case more logic is needed later
        subprocess.run(f'rm -f {path_to_delete}', shell=True)
 
-    def remove_old_files(self, package: str, new_file_list: list[str]):
+    def remove_old_files(self, package: str, new_file_list: list[str]) -> None:
        # used for update to remove old stale files
        to_remove = []
        files_old = set(open(f"{self.settings.lib_dir}/file-lists/{package}.list", "r").read().splitlines())
@@ -64,19 +64,18 @@ class System:
        # This does NOT do depend checking. This will remove ANY package given to it even if it required for system operation.
        # Use recalculate_system_depends BEFORE using this package
        try:
-          files = set(open(f"{self.settings.lib_dir}/file-lists/{package}.list", "r").read().splitlines())
+         files = set(open(f"{self.settings.lib_dir}/file-lists/{package}.list", "r").read().splitlines())
        except FileNotFoundError:
-          print(f"File list for {package} not found, skipping removal")
-          return
+         print(f"File list for {package} not found, skipping removal")
+         return
        print(f"Removing {package}")
        for file in files:
-          # os/subprocesses remove function will crash the system if it's removing something that is currently in use
-          self.check_for_and_delete(f'{self.settings.install_path}/{file}')
-       # Sed's are easier to understand
-       # it's removed from wanted in remove.py
-       subprocess.run(f"sed -i '/^{package}$/d' {self.settings.lib_dir}/installed_package" , shell=True)
-       subprocess.run(f"sed -i '/^{package}$/d' {self.settings.lib_dir}/wanted_packages" , shell=True)
-       subprocess.run(f"sed -i '/^{package}:.*$/d' {self.settings.lib_dir}/versions" , shell=True)
+         # os/subprocesses remove function will crash the system if it's removing something that is currently in use
+         self.check_for_and_delete(f'{self.settings.install_path}/{file}')
+       self.installed_packages.remove(package)
+       if package in self.wanted_packages:
+         self.wanted_packages.remove(package)
+       self.versions.pop(package)
 
     def remove_packages(self, packages: list[str]):
        text_column = TextColumn("{task.description}", table_column=Column(ratio=1))
@@ -160,21 +159,8 @@ class System:
        self.install_files(package)
    
        if not reinstalling:
-          # add to installed_package
-          with open(f'{self.settings.lib_dir}/installed_package', 'a') as f:
-              f.write(package + "\n")
-
-          versions_path = f'{self.settings.lib_dir}/versions'
-          # remove old version
-          with open(versions_path, 'r') as f:
-             lines = f.readlines()
-          lines = [line for line in lines if not line.startswith(f"{package}:")]
-          with open(versions_path, 'w') as f:
-              f.writelines(lines)
-
-          # add new version
-          with open(versions_path, 'a') as f:
-              f.write(f"{package}: {repo.get_package_ver(package)}\n")
+          self.installed_packages.add(package)
+          self.versions[package] = repo.get_package_ver(package)
 
        subprocess.run(f'rm -rf {package}', shell=True)
        subprocess.run(f'rm -f {package}.tar.xz', shell=True)
@@ -209,5 +195,14 @@ class System:
        # only needed for bootstrap postinst
        if self.settings.run_postinst:
           self.postinst()
-
-    
+      
+    def save_state(self):
+      with open(f"{self.settings.install_path}/var/lib/neptune/wanted_packages", "w") as wanted_package_file:
+         for package in self.wanted_packages:
+            wanted_package_file.write(f"{package}\n")
+      with open(f"{self.settings.install_path}/var/lib/neptune/installed_package", "w") as installed_package_file:
+         for package in self.installed_packages:
+            installed_package_file.write(f"{package}\n")
+      with open(f"{self.settings.install_path}/var/lib/neptune/versions", "w") as versions_file:
+         for package, version in self.versions.items():
+            versions_file.write(f"{package}: {version}\n")

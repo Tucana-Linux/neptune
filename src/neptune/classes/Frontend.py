@@ -13,15 +13,15 @@ class Frontend:
         self.system : System = system
 
     def install(self):
-       arguments = self.system.settings.arguments
-       if not len(arguments) > 0:
+       packages = self.system.settings.arguments
+       if not len(packages) > 0:
           print("Usage: neptune-install {{PACKAGES}}") 
           sys.exit(1)
-       if not self.system.utils.check_if_packages_exist(arguments):
+       if not self.system.utils.check_if_packages_exist(packages):
           print("Packages not found")
           sys.exit(1)
        print("Getting dependencies")
-       packages_to_install=self.system.utils.get_depends(arguments, check_installed=True, installed_packages=self.system.installed_packages)
+       packages_to_install=self.system.utils.get_depends(packages, check_installed=True, installed_packages=self.system.installed_packages)
        if len(packages_to_install) == 0:
           print("Nothing to do all packages are installed")
           sys.exit()
@@ -32,9 +32,8 @@ class Frontend:
              print("Aborting")
              sys.exit(0)
        self.system.install_packages(packages_to_install)
-       for package in arguments:
-          with open(f'{self.system.settings.lib_dir}/wanted_packages', 'a') as wanted_packages:
-             wanted_packages.write(package + "\n")
+       for package in packages:
+          self.system.wanted_packages.add(package)
 
     def reinstall(self):
        arguments = self.system.settings.arguments

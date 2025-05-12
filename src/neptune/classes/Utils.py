@@ -51,7 +51,7 @@ class Utils:
     
     def generate_file_list(self, package: str) -> list[str]:
         os.chdir(f'{self.settings.cache_dir}/{package}')
-
+        #python abracadabra
         files = [f"/{p}" for p in Path('.').rglob('*') if p.is_file() or p.is_symlink()]
         backup = self.parse_backup_file(package)
         if backup:
@@ -138,11 +138,10 @@ class Utils:
    
        return updates
 
-    def check_if_packages_exist_return_packages(self, packages):
+    def check_if_packages_exist_return_packages(self, packages : set[str]) -> list[str]:
        packages_no_exist = []
        for package in packages:
           if not self.check_if_package_exists(package):
-             subprocess.run(f'sed -i \'/{package}/d\' {self.settings.lib_dir}/wanted_packages', shell=True)
              packages_no_exist.append(package)
        return packages_no_exist
 
