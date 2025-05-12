@@ -675,19 +675,29 @@ EOF
     echo "Bootstrap chroot non-functional"
     return 1
   fi
-
   if [ ! -f $CHROOT/bootstrap/var/lib/neptune/wanted_packages ]; then
     echo "Wanted packages doesn't exist"
     return 1
   fi
-
+  if ! cat $CHROOT/bootstrap/var/lib/neptune/wanted_packages | grep base; then
+    echo "Wanted Packages System state not saved"
+    return 1
+  fi
   if [ ! -f $CHROOT/bootstrap/var/lib/neptune/installed_package ]; then
     echo "Installed package doesn't exist"
     return 1
   fi
+  if ! cat $CHROOT/bootstrap/var/lib/neptune/installed_package | grep base; then
+    echo "Installed Packages System state not saved"
+    return 1
+  fi
 
   if [ ! -f $CHROOT/bootstrap/var/lib/neptune/versions ]; then
-    echo "Installed package doesn't exist"
+    echo "Versions file doesn't exist"
+    return 1
+  fi
+  if ! cat $CHROOT/bootstrap/var/lib/neptune/versions | grep base; then
+    echo "Versions state not saved"
     return 1
   fi
   return 0
