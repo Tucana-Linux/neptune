@@ -10,17 +10,18 @@ class NeptuneSettings:
         #print("Reinitalizing")
         # TODO Consider removing install_path
         self.arguments : list[str] = arguments
-        self.install_path = "/"
-        self.yes_mode = False
-        self.run_postinst = True
-        self.no_depend_mode = False
-        self.stream_chunk_size = 8192
-        self.debug_level = 30
+        self.install_path : str = "/"
+        self.yes_mode : bool = False
+        self.run_postinst : bool = True
+        self.no_depend_mode : bool = False
+        self.stream_chunk_size : int = 8192
+        self.debug_level : int = 30
         self.repositories: dict[str, Repository] = {}
-        self.lib_dir = f"{self.install_path}/var/lib/neptune/"
-        self.cache_dir = f"{self.install_path}/var/lib/neptune/cache"
+        self.lib_dir : str = f"{self.install_path}/var/lib/neptune/"
+        self.cache_dir : str = f"{self.install_path}/var/lib/neptune/cache"
 
     def parse_config(self) -> None:
+       config = {}
        try:
           with open('/etc/neptune/config.yaml', 'r') as config_file:
              try:
@@ -88,5 +89,7 @@ class NeptuneSettings:
                 self.yes_mode = True
              case 1:
                 self.no_depend_mode = True
+             case _:
+                logging.error("Neptune bug, something is seriously messed up")
           # How many packages could you possibly pass? probably fine to use remove
           self.arguments.remove(valid_cli_arguments[argindex])

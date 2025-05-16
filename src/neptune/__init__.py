@@ -5,7 +5,6 @@ import sys
 
 from neptune.classes.Frontend import Frontend
 from neptune.classes.NeptuneSettings import NeptuneSettings
-from neptune.classes.Repository import Repository
 from neptune.classes.System import System
 
 if os.geteuid() != 0:
@@ -25,6 +24,8 @@ def run_operation(operation: str, frontend: Frontend):
          frontend.remove()
       case "sync":
          frontend.sync()
+      case _ :
+         logging.critical("Neptune Bug, could not find operation even though it's valid")
 
 def main():
    # also initalizes all the functions variables

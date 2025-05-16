@@ -1,3 +1,7 @@
+
+from __future__ import annotations
+from neptune.classes.NeptuneSettings import NeptuneSettings
+from rich.status import Status
 import os
 import logging
 import subprocess
@@ -9,7 +13,7 @@ import requests
 
 
 class Repository:
-    def __init__(self, name: str, url: str, settings):
+    def __init__(self, name: str, url: str, settings: NeptuneSettings):
         self.name : str = name
         self.url : str = url
         # type decl causes circular dependency # TODO fix this
@@ -32,24 +36,25 @@ class Repository:
           if check_file.status_code != requests.codes.ok:
              logging.warning(f"{self.name} This does not seem to be a Tucana repo server")
              subprocess.run(f"rm -rf {self.settings.cache_dir}/repos/{self.name}/", shell=True)
-             self.__init__(self.name, self.url)
+             self.__init__(self.name, self.url, self.settings)
              return False
        except requests.RequestException as e:
           logging.warning(f"Error connecting to repo {self.name}: {e}")
           subprocess.run(f"rm -rf {self.settings.cache_dir}/repos/{self.name}/", shell=True)
-          self.__init__(self.name, self.url)
+          self.__init__(self.name, self.url, self.settings)
           return False
        return True
     # link_path and package are mutally exclusive
     # link path is a relative path
-    def download_link(self, link_path, output_path, package=None, console_line=None):
-       def make_progress_bar(progress, total, width=20):
+    def download_link(self, link_path: str, output_path: str, package: str="", 
+                      console_line: Status | None = None) -> None: # type: ignore
+       def make_progress_bar(progress : float, total: float, width: int=20):
           filled_length = int(width * progress / total)
           # i love you python string concatonation
           bar = '#' * filled_length + ' ' * (width - filled_length)
           percent = progress / total * 100
           return rf"\[{bar}] {percent:.1f}%"
-       if package != None:
+       if package != "":
           link = f'{self.url}/packages/{package}.tar.xz'
           output_path = f'{self.settings.cache_dir}/{package}.tar.xz'
        else:
@@ -99,10 +104,10 @@ class Repository:
         # reinit
         self.__init__(self.name, self.url, self.settings)
 
-    def check_if_package_exists(self, package) -> bool:
+    def check_if_package_exists(self, package : str) -> bool:
        return package in self.available_packages
         
     # Precondition, a package that exists in this repo
-    def get_package_ver(self, package) -> str:
+    def get_package_ver(self, package : str) -> str:
        return self.versions[package]
 

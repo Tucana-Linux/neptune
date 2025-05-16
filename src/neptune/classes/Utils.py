@@ -2,14 +2,12 @@ import logging
 import os
 from pathlib import Path
 import re
-import subprocess
 import sys
 from typing import Optional
 
 from packaging.version import Version
 from neptune.classes.Repository import Repository
 from neptune.classes.NeptuneSettings import NeptuneSettings
-from neptune.classes.Package import Package
 
 
 class Utils:
@@ -85,7 +83,7 @@ class Utils:
              return True
        return False
 
-    def check_if_packages_exist(self, packages: list[str]) -> bool:
+    def check_if_packages_exist(self, packages: set[str]) -> bool:
        for package in packages:
           logging.debug(f"checking existence of {package}")
           if not self.check_if_package_exists(package):
@@ -93,7 +91,7 @@ class Utils:
              return False
        return True
     
-    def get_depends(self, temp_packages: list[str], check_installed: bool, installed_packages: Optional[set[str]] = None,  processing_set: Optional[set[str]] = None):
+    def get_depends(self, temp_packages: set[str], check_installed: bool, installed_packages: Optional[set[str]] = None,  processing_set: Optional[set[str]] = None):
        # This one should start none
        if processing_set == None:
           processing_set = set()
@@ -105,10 +103,10 @@ class Utils:
           if (not package in processing_set) and (not check_installed or not (package in installed_packages)):
              processing_set.add(package)
              try:
-                depends=[]
-                repo: Repository = self.find_repo_with_best_version(package).name
+                depends : set[str] = set()
+                repo: str = self.find_repo_with_best_version(package).name
                 with open(f'{self.settings.cache_dir}/repos/{repo}/depend/depend-{package}', 'r') as depend_file:
-                   depends = depend_file.read().split()
+                   depends = set(depend_file.read().split())
              except FileNotFoundError:
                 logging.warning(f"{package} depends file NOT found, something is SERIOUSLY WRONG")
                 continue
@@ -123,11 +121,11 @@ class Utils:
        return packages
 
     def check_for_updates(self, installed_packages : set[str], versions: dict[str, str]) -> list[str]:
-       updates = []
+       updates : list[str]= []
 
        for package in installed_packages:
           # ignore unavailable packages
-          if not self.check_if_packages_exist([package]):
+          if not self.check_if_package_exists(package):
              continue
           best_repo = self.find_repo_with_best_version(package)
           best_ver = best_repo.get_package_ver(package)
@@ -139,14 +137,14 @@ class Utils:
        return updates
 
     def check_if_packages_exist_return_packages(self, packages : set[str]) -> list[str]:
-       packages_no_exist = []
+       packages_no_exist: list[str] = []
        for package in packages:
           if not self.check_if_package_exists(package):
              packages_no_exist.append(package)
        return packages_no_exist
 
     def recalculate_system_depends(self, wanted_packages: set[str], installed_packages: set[str]) -> list[list[str]]:
-       remove = []
+       remove : list[str]= []
        # check to see if anything currently installed is no longer avaliable
        remove.extend(self.check_if_packages_exist_return_packages(installed_packages))
        logging.debug(f"Recalculating system dependencies, Current wanted packages: {wanted_packages} ")

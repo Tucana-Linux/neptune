@@ -5,11 +5,11 @@ import subprocess
 import sys
 
 from rich.console import Console, Group
+from rich.status import Status
 from rich.live import Live
 from rich.progress import BarColumn, Progress, TextColumn
 from rich.table import Column
 from neptune.classes.NeptuneSettings import NeptuneSettings
-from neptune.classes.Package import Package
 from neptune.classes.Repository import Repository
 from neptune.classes.Utils import Utils
 
@@ -25,9 +25,9 @@ class System:
 
     def __init__(self, settings: NeptuneSettings):
         self.settings : NeptuneSettings = settings
-        self.postinstalls = []
-        self.utils = Utils(self.settings)
-        self.wanted_packages=[]
+        self.postinstalls : list[str] = []
+        self.utils : Utils = Utils(self.settings)
+        self.wanted_packages : set[str]= set()
 
         try:
            self.installed_packages = set(open(f"{self.settings.lib_dir}/installed_package", "r").read().splitlines())
@@ -53,7 +53,7 @@ class System:
 
     def remove_old_files(self, package: str, new_file_list: list[str]) -> None:
        # used for update to remove old stale files
-       to_remove = []
+       to_remove : list[str]= []
        files_old = set(open(f"{self.settings.lib_dir}/file-lists/{package}.list", "r").read().splitlines())
        to_remove += [file for file in files_old if file not in new_file_list]
        for file in to_remove:
@@ -131,7 +131,7 @@ class System:
                 self.move_with_permissions(src_path, dest_path)
        os.chdir(self.settings.cache_dir)
 
-    def install_package(self, package: str, repo: Repository, reinstalling: bool = False, console_line=None) -> None:
+    def install_package(self, package: str, repo: Repository, console_line : Status, reinstalling: bool = False) -> None:
        if not os.path.exists(self.settings.cache_dir):
           os.makedirs(self.settings.cache_dir)
        os.chdir(self.settings.cache_dir)
@@ -165,12 +165,12 @@ class System:
        subprocess.run(f'rm -rf {package}', shell=True)
        subprocess.run(f'rm -f {package}.tar.xz', shell=True)
 
-    def install_packages(self, packages: list[str], reinstalling=False):
+    def install_packages(self, packages: list[str], reinstalling: bool = False):
        console = Console()
        text_column = TextColumn("{task.description}", table_column=Column(ratio=1))
        bar_column = BarColumn(bar_width=None, table_column=Column(ratio=5))
        progress = Progress(text_column, bar_column, expand=True)
-       status_lines=[]
+       status_lines : list[str]=[]
        current_line = console.status("", refresh_per_second=10)
        task = progress.add_task("Installing", total=len(packages))
        rows = shutil.get_terminal_size().lines - 4
@@ -187,7 +187,7 @@ class System:
 
           for package in packages:
              repo = self.utils.find_repo_with_best_version(package)
-             self.install_package(package, repo, reinstalling, console_line=current_line)
+             self.install_package(package, repo, console_line=current_line, reinstalling=False)
              status_lines.append(rf" {package} \[[bold blue]✔[/bold blue]]")
              progress.update(task, advance=1)
              live.update(get_status_group())

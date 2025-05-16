@@ -1,4 +1,3 @@
-import os
 import sys
 from neptune.classes.System import System
 
@@ -13,7 +12,7 @@ class Frontend:
         self.system : System = system
 
     def install(self):
-       packages = self.system.settings.arguments
+       packages = set(self.system.settings.arguments)
        if not len(packages) > 0:
           print("Usage: neptune-install {{PACKAGES}}") 
           sys.exit(1)

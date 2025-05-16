@@ -2,7 +2,6 @@ import logging
 import subprocess
 import sys
 import os
-import neptune
 from neptune.classes.Frontend import Frontend
 from neptune.classes.NeptuneSettings import NeptuneSettings
 from neptune.classes.System import System
@@ -42,6 +41,8 @@ def parse_arguments():
                   settings.yes_mode = True
                case 1:
                   settings.no_depend_mode = True
+               case _:
+                  logging.critical("Neptune bug could not find argument even though it's valid")
             # How many packages could you possibly pass? probably fine to use remove
       arguments.remove(valid_cli_arguments[arg])
 
@@ -70,7 +71,7 @@ def bootstrap():
    frontend.sync()
 
    print("Getting dependencies")
-   packages=system.utils.get_depends(["base"], check_installed=False)
+   packages=system.utils.get_depends(set("base"), check_installed=False)
    if not settings.yes_mode:
       print(f"Packages to install: {" ".join(packages)}") 
       confirmation=input(f"You are about to bootstrap {path}, would you like to continue? [Y/n] ")
