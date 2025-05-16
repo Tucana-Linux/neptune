@@ -1,6 +1,8 @@
-
 from __future__ import annotations
-from neptune.classes.NeptuneSettings import NeptuneSettings
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from neptune.classes.NeptuneSettings import NeptuneSettings
 from rich.status import Status
 import os
 import logging
