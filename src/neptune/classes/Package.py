@@ -1,5 +1,3 @@
-
-
 class Package:
     depends: list[str]
     version: str

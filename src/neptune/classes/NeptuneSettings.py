@@ -7,65 +7,67 @@ from neptune.classes.Repository import Repository
 class NeptuneSettings:
 
     def __init__(self, arguments: list[str]):
-        #print("Reinitalizing")
+        # print("Reinitalizing")
         # TODO Consider removing install_path
-        self.arguments : list[str] = arguments
-        self.install_path : str = "/"
-        self.yes_mode : bool = False
-        self.run_postinst : bool = True
-        self.no_depend_mode : bool = False
-        self.stream_chunk_size : int = 8192
-        self.debug_level : int = 30
+        self.arguments: list[str] = arguments
+        self.install_path: str = "/"
+        self.yes_mode: bool = False
+        self.run_postinst: bool = True
+        self.no_depend_mode: bool = False
+        self.stream_chunk_size: int = 8192
+        self.debug_level: int = 30
         self.repositories: dict[str, Repository] = {}
-        self.lib_dir : str = f"{self.install_path}/var/lib/neptune/"
-        self.cache_dir : str = f"{self.install_path}/var/lib/neptune/cache"
+        self.lib_dir: str = f"{self.install_path}/var/lib/neptune/"
+        self.cache_dir: str = f"{self.install_path}/var/lib/neptune/cache"
 
     def parse_config(self) -> None:
-       config = {}
-       try:
-          with open('/etc/neptune/config.yaml', 'r') as config_file:
-             try:
-                config = yaml.safe_load(config_file)
-             except yaml.YAMLError as e:
-                print(f"Error parsing yaml syntax {e}")
-       except Exception as e:
-          logging.error(f"An unexpected error occured {e}")
-          sys.exit(1)
-       try:
-          self.install_path = config['system-settings']['install_path']
-          self.yes_mode = config['system-settings']['yes_mode_by_default']
-          self.stream_chunk_size = config['system-settings']['stream_chunk_size']
-          self.debug_level = config['system-settings']['loglevel']
-       except KeyError as e:
-          logging.error(f"An unexpected value was found in {e}")
-          sys.exit(1)
-
+        config = {}
+        try:
+            with open("/etc/neptune/config.yaml", "r") as config_file:
+                try:
+                    config = yaml.safe_load(config_file)
+                except yaml.YAMLError as e:
+                    print(f"Error parsing yaml syntax {e}")
+        except Exception as e:
+            logging.error(f"An unexpected error occured {e}")
+            sys.exit(1)
+        try:
+            self.install_path = config["system-settings"]["install_path"]
+            self.yes_mode = config["system-settings"]["yes_mode_by_default"]
+            self.stream_chunk_size = config["system-settings"]["stream_chunk_size"]
+            self.debug_level = config["system-settings"]["loglevel"]
+        except KeyError as e:
+            logging.error(f"An unexpected value was found in {e}")
+            sys.exit(1)
 
     def parse_repos(self) -> None:
-       try:
-          with open('/etc/neptune/repositories.yaml', 'r') as repo_file:
-             try:
-                repos = yaml.safe_load(repo_file)
-             except yaml.YAMLError as e:
-                logging.error(f"Error parsing yaml syntax {e}")
-                sys.exit(1)
-       except Exception as e:
-          logging.error(f"An unexpected error occured {e}")
-          sys.exit(1)
-       try:
-          for repo_name, repo_data in repos['repositories'].items():
-             repo_object = Repository(repo_name, repo_data['url'], self)
-             self.repositories[repo_name] = repo_object
-       except Exception as e:
-             logging.error(f"Error parsing repositories file exception {e}")
+        try:
+            with open("/etc/neptune/repositories.yaml", "r") as repo_file:
+                try:
+                    repos = yaml.safe_load(repo_file)
+                except yaml.YAMLError as e:
+                    logging.error(f"Error parsing yaml syntax {e}")
+                    sys.exit(1)
+        except Exception as e:
+            logging.error(f"An unexpected error occured {e}")
+            sys.exit(1)
+        try:
+            for repo_name, repo_data in repos["repositories"].items():
+                repo_object = Repository(repo_name, repo_data["url"], self)
+                self.repositories[repo_name] = repo_object
+        except Exception as e:
+            logging.error(f"Error parsing repositories file exception {e}")
 
     def parse_arguments(self):
-      valid_cli_arguments = ["--y", "--no-depend"]
-      # get rid of the first 1 (always the binary name)
-      self.arguments.pop(0)
+        valid_cli_arguments = ["--y", "--no-depend"]
+        # get rid of the first 1 (always the binary name)
+        self.arguments.pop(0)
 
-      if len(self.arguments) == 0 or (self.arguments[0] not in ("install", "update", "sync", "reinstall", "remove")):
-         usage="""Usage: neptune [operation] [flags] [packages (if applicable)]
+        if len(self.arguments) == 0 or (
+            self.arguments[0]
+            not in ("install", "update", "sync", "reinstall", "remove")
+        ):
+            usage = """Usage: neptune [operation] [flags] [packages (if applicable)]
            
     The package manager, used to install, update, reinstall, or remove packages
 
@@ -78,18 +80,18 @@ class NeptuneSettings:
        Flags:
            --y: Temporarily disables confirmation with all operations that require one
            --no-depend: Temporarily disables dependency resolution"""
-         print(usage)
-         sys.exit(0)
-      self.operation = self.arguments[0]
-      self.arguments.pop(0)
-      for argindex in range(len(valid_cli_arguments)):
-        if valid_cli_arguments[argindex] in self.arguments:
-          match argindex:
-             case 0:
-                self.yes_mode = True
-             case 1:
-                self.no_depend_mode = True
-             case _:
-                logging.error("Neptune bug, something is seriously messed up")
-          # How many packages could you possibly pass? probably fine to use remove
-          self.arguments.remove(valid_cli_arguments[argindex])
+            print(usage)
+            sys.exit(0)
+        self.operation = self.arguments[0]
+        self.arguments.pop(0)
+        for argindex in range(len(valid_cli_arguments)):
+            if valid_cli_arguments[argindex] in self.arguments:
+                match argindex:
+                    case 0:
+                        self.yes_mode = True
+                    case 1:
+                        self.no_depend_mode = True
+                    case _:
+                        logging.error("Neptune bug, something is seriously messed up")
+                # How many packages could you possibly pass? probably fine to use remove
+                self.arguments.remove(valid_cli_arguments[argindex])
