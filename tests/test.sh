@@ -113,20 +113,12 @@ function make_mock_package() {
   echo "$pkgname $date" > "$pkgname"/tests/"$pkgname"/"$pkgname"
   # symlink for testing
   ln -sfv /tests/"$pkgname"/"$pkgname" "$pkgname"/tests/"$pkgname"/"$pkgname"-sym
-  if [[ $repo == "1" ]]; then
-    echo "$depends" > $REPO_DIR/depend/depend-$pkgname
-    sed -i "/^$pkgname:/d" $REPO_DIR/available-packages/versions
-    cd $REPO_DIR/depend/ || exit
-  elif [[ $repo == "2" ]]; then
-    echo "$depends" > $REPO2_DIR/depend/depend-$pkgname
-    sed -i "/^$pkgname:/d" $REPO2_DIR/available-packages/versions
-    cd $REPO2_DIR/depend/ || exit
-  else
+
+  if [[ $repo != "1" ]] || [[ $repo != "2" ]]; then
     echo "TEST ERROR, REPO not defined for package $pkgname"
     exit 1
   fi
 
-  tar -cvzpf depends.tar.xz *
   cd - || exit
   if [[ $use_postinst == "true" ]]; then
     cat > "$pkgname"/postinst << EOF
@@ -159,10 +151,24 @@ EOF
     cd $REPO2_DIR/packages || exit
   fi
 
-  ls | sed 's/.tar.xz//g' > ../available-packages/packages
-  echo "$pkgname: $version" >> ../available-packages/versions
-  sort ../available-packages/versions > ../available-packages/versions-temp
-  mv ../available-packages/versions-temp ../available-packages/versions
+  yq -n \
+    --arg name "$pkgname" \
+    --arg deps "$depends" \
+    --arg version "$version" \
+    --argjson download_size 100 \
+    --argjson install_size 100 \
+    --arg last_update "$date" '
+    {
+      ($name): {
+        depends: ($deps | split(" ")),
+        version: $version,
+        download_size: $download_size,
+        install_size: $install_size,
+        last_update: $last_update
+      }
+    }
+  ' >> available-packages/packages.yaml
+
   cd - || exit
 }
 
@@ -316,16 +322,8 @@ function sync_test() {
   # Validate that the files were fetched and extracted
   IFS=" "
   for num in $(echo "1 2"); do
-    if [[ ! -f $CHROOT/var/lib/neptune/cache/repos/repo$num/available-packages ]]; then
-      echo "Available packages file for repo$num not downloaded"
-      return 1
-    fi
-    if [[ ! -f $CHROOT/var/lib/neptune/cache/repos/repo$num/versions ]]; then
-      echo "Versions file for repo$num not downloaded"
-      return 1
-    fi
-    if [[ ! -d $CHROOT/var/lib/neptune/cache/repos/repo$num/depend ]]; then
-      echo "Dependency files for repo$num not extracted"
+    if [[ ! -f $CHROOT/var/lib/neptune/cache/repos/repo$num/packages.yaml ]]; then
+      echo "Packages meta file for repo$num not downloaded"
       return 1
     fi
   done
@@ -334,7 +332,7 @@ function sync_test() {
   return 0
 }
 function install_test_no_depends() {
-  make_mock_package "install-test" "" "" "" "1" "1.0.0"
+  make_mock_package "install-test" "" "" "" "1" "1.2.5"
 
   chroot $CHROOT /bin/bash -c "neptune sync"
   # test non existent package first
@@ -360,18 +358,20 @@ function install_test_no_depends() {
     echo "Installation did not install the file list"
     return 1
   fi
-  if ! cat $CHROOT/var/lib/neptune/installed_package | grep install-test; then
-    echo "Package not in installed_package"
+  if ! cat $CHROOT/var/lib/neptune/system-packages.yaml | grep install-test; then
+    echo "Package not in system-packages yaml"
     return 1
   fi
-  if ! cat $CHROOT/var/lib/neptune/versions | grep install-test; then
-    echo "Package not in versions"
+  if ! cat $CHROOT/var/lib/neptune/system-packages.yaml | grep "1.2.5"; then
+    echo "Package version not registered properly"
     return 1
   fi
-  if ! cat $CHROOT/var/lib/neptune/wanted_packages | grep install-test; then
-    echo "Package not in wanted_packages"
+  wanted_status=$(yq '.install-test.wanted' $CHROOT/var/lib/neptune/system-packages.yaml)
+  if [[ "$wanted_status" == "null" || -z "$value" ]]; then
+    echo "Package not set as wanted"
     return 1
   fi
+
   echo "Tests passed"
   return 0
 }
@@ -387,12 +387,13 @@ function install_test_with_depends() {
     echo "Neptune exited with error code $?"
     return 1
   fi
-  if ! cat $CHROOT//var/lib/neptune/installed_package | grep libtest; then
-    echo "Depend not in installed_package"
+  if ! cat $CHROOT/var/lib/neptune/system-packages.yaml | grep libtest; then
+    echo "Depend not registered in system-packages.yaml"
     return 1
   fi
-  if cat $CHROOT/var/lib/neptune/wanted_packages | grep libtest; then
-    echo "Depend is wrongly in wanted_packages"
+  wanted_status=$(yq '.libtest.wanted' $CHROOT/var/lib/neptune/system-packages.yaml)
+  if [[ $wanted_status == "true" ]]
+    echo "Depend is wrongly registered as wanted"
     return 1
   fi
   make_mock_package "install-test-depend" "install-test-depend" "" "" "1" "1.0.1"
@@ -589,18 +590,21 @@ function update_test() {
     return 1
   fi
 
-  if [ ! -f $CHROOT/tests/libupdatenew/libupdatenew ]; then
+  if [ ! -f $CHROOT/tests/libupdatenew/libupdatenew ] || ! cat /var/lib/neptune/system-packages.yaml | grep "libupdatenew"; then
     echo "Test failed: New dependency not installed"
     return 1
   fi
 
-  if ! cat $CHROOT/var/lib/neptune/versions | grep "update-test-root: 1.0.1"; then
-    echo "The versions file was not updated with the new version"
+
+
+  version_status=$(yq '.update-test-root.version' $CHROOT/bootstrap/var/lib/neptune/system-packages.yaml)
+  if [[ $version_status != "1.0.1" ]]
+    echo "The system-packages.yaml version was not updated or is otherwise broken"
+    return 1
   fi
-  if cat $CHROOT/var/lib/neptune/versions | grep "update-test-root: 1.0.0"; then
-    echo "Update left the old version of update-test-root in the versions file but deleted it from the system"
-  fi
+
   echo "Update test passed"
+
   return 0
 
 }
@@ -637,18 +641,13 @@ function remove_test() {
   fi
   
   # Check if installed package has been updated
-  if cat $CHROOT//var/lib/neptune/installed_package | grep "remove-test"; then
-    echo "Test failed: remove-test is still listed in installed_package after removal"
+  if cat $CHROOT/var/lib/neptune/system-packages.yaml | grep "remove-test"; then
+    echo "Test failed: remove-test is still listed in system-packages.yaml after removal"
     return 1
   fi
 
-  if cat $CHROOT//var/lib/neptune/installed_package | grep "remove-test-depend"; then
-    echo "Test failed: remove-test-depend is still listed in installed_package after removal"
-    return 1
-  fi
-
-  if cat $CHROOT/var/lib/neptune/wanted_packages | grep "remove-test"; then
-    echo "Test failed: remove-test is still listed in wanted_packages after removal"
+  if cat $CHROOT//var/lib/neptune/system-packages.yaml | grep "remove-test-depend"; then
+    echo "Test failed: remove-test-depend is still listed in system-packages.yaml after removal"
     return 1
   fi
 
@@ -675,31 +674,24 @@ EOF
     echo "Bootstrap chroot non-functional"
     return 1
   fi
-  if [ ! -f $CHROOT/bootstrap/var/lib/neptune/wanted_packages ]; then
-    echo "Wanted packages doesn't exist"
-    return 1
-  fi
-  if ! cat $CHROOT/bootstrap/var/lib/neptune/wanted_packages | grep base; then
-    echo "Wanted Packages System state not saved"
-    return 1
-  fi
-  if [ ! -f $CHROOT/bootstrap/var/lib/neptune/installed_package ]; then
-    echo "Installed package doesn't exist"
-    return 1
-  fi
-  if ! cat $CHROOT/bootstrap/var/lib/neptune/installed_package | grep base; then
-    echo "Installed Packages System state not saved"
+  if [ ! -f $CHROOT/bootstrap/var/lib/neptune/system-packages.yaml ]; then
+    echo "Main system-packages.yaml file doesn't exist"
     return 1
   fi
 
-  if [ ! -f $CHROOT/bootstrap/var/lib/neptune/versions ]; then
-    echo "Versions file doesn't exist"
+  wanted_status=$(yq '.base.wanted' $CHROOT/bootstrap/var/lib/neptune/system-packages.yaml)
+
+  if [[ $wanted_status != "true" ]]
+    echo "base not set as wanted"
     return 1
   fi
-  if ! cat $CHROOT/bootstrap/var/lib/neptune/versions | grep base; then
-    echo "Versions state not saved"
+  version_status=$(yq '.base.version' $CHROOT/bootstrap/var/lib/neptune/system-packages.yaml)
+
+  if [[ $version_status == "null" ]]
+    echo "Package not set properly in bootstrap"
     return 1
   fi
+
   return 0
   
 }
