@@ -16,6 +16,23 @@ NC='\033[0m'
 sudo neptune install yq python-build python-installer screen
 mkdir -p $TEMP_DIR $REPO_DIR $REPO2_DIR $CHROOT $LOG_DIR
 # Universal Function
+
+
+function cleanup() {
+  echo "Cleaning up..."
+  screen -X -S repo quit || true 
+  screen -X -S repo2 quit || true
+  if [[ -d $CHROOT/dev ]]; then
+     umount "$CHROOT/dev/pts"
+     umount "$CHROOT/dev"
+     umount "$CHROOT/proc"
+     umount "$CHROOT/sys"
+  fi
+  rm -rf "$TEMP_DIR"
+}
+
+trap cleanup EXIT
+
 function chroot_setup() {
 
   if [[ -d $CHROOT/dev ]]; then
@@ -114,7 +131,7 @@ function make_mock_package() {
   # symlink for testing
   ln -sfv /tests/"$pkgname"/"$pkgname" "$pkgname"/tests/"$pkgname"/"$pkgname"-sym
 
-  if [[ $repo != "1" ]] || [[ $repo != "2" ]]; then
+  if [[ $repo != "1" && $repo != "2" ]]; then
     echo "TEST ERROR, REPO not defined for package $pkgname"
     exit 1
   fi
@@ -200,7 +217,7 @@ function config_test() {
 
   # Test: Modify repository URL
   echo "Testing repository URL..."
-  yq eval ".repositories[0] = \"invalid_url\"" -i $config_path
+  yq eval ".repositories.repo1.url = \"http://invalid.url\"" -i "$config_path"
   chroot $CHROOT /bin/bash -c "neptune sync" >/dev/null 2>&1
   if [[ $? -eq 0 ]]; then
     echo "Neptune sync succeeded with invalid repository URL, which should not happen"
@@ -209,7 +226,7 @@ function config_test() {
   fi
 
   # Restore the repository URL for subsequent tests
-  yq eval ".repositories[0] = \"$REPO\"" -i $config_path
+  yq eval ".repositories.repo1.url = \"$REPO\"" -i "$config_path"
 
   # Test: Modify install path
   echo "Testing install path..."
@@ -367,7 +384,7 @@ function install_test_no_depends() {
     return 1
   fi
   wanted_status=$(yq '.install-test.wanted' $CHROOT/var/lib/neptune/system-packages.yaml)
-  if [[ "$wanted_status" == "null" || -z "$value" ]]; then
+  if [[ "$wanted_status" == "null" || -z "$wanted_status" ]]; then
     echo "Package not set as wanted"
     return 1
   fi
@@ -597,7 +614,7 @@ function update_test() {
 
 
 
-  version_status=$(yq '.update-test-root.version' $CHROOT/bootstrap/var/lib/neptune/system-packages.yaml)
+  version_status=$(yq '.update-test-root.version' $CHROOT/var/lib/neptune/system-packages.yaml)
   if [[ $version_status != "1.0.1" ]]
     echo "The system-packages.yaml version was not updated or is otherwise broken"
     return 1
@@ -646,7 +663,7 @@ function remove_test() {
     return 1
   fi
 
-  if cat $CHROOT//var/lib/neptune/system-packages.yaml | grep "remove-test-depend"; then
+  if cat $CHROOT/var/lib/neptune/system-packages.yaml | grep "remove-test-depend"; then
     echo "Test failed: remove-test-depend is still listed in system-packages.yaml after removal"
     return 1
   fi
@@ -703,6 +720,7 @@ function run_test() {
   $test_function >> "$test_name.log" 2>&1
   p_or_f "$test_name" "$?"
 }
+
 
 
 

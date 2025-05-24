@@ -1,6 +1,10 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+import yaml
+
+from neptune.classes import Package
+
 if TYPE_CHECKING:
     from neptune.classes.NeptuneSettings import NeptuneSettings
 from rich.status import Status
@@ -23,23 +27,16 @@ class Repository:
         if not (len(self.name) >= 1 and len(self.url) >= 1):
             logging.critical("Configuration error with repos")
             sys.exit(1)
-        self.available_packages: set[str] = set()
-        self.versions = {}
+        self.packages = {}
         try:
-            self.available_packages = set(
-                open(
-                    f"{self.settings.cache_dir}/repos/{self.name}/available-packages",
-                    "r",
-                )
-                .read()
-                .splitlines()
-            )
-            with open(
-                f"{self.settings.cache_dir}/repos/{self.name}/versions", "r"
-            ) as file:
-                self.versions = dict(
-                    line.strip().split(": ") for line in file if line.strip()
-                )
+            with open(f"{self.settngs.cache_dir}/repos/{self.name}/system-packages.yaml", "r") as f:
+                try:
+                    raw_data = yaml.safe_load(f)
+                    self.packages = {name: Package(**metadata) for name, metadata in raw_data.items()}
+                except yaml.YAMLError as e:
+                    logging.critical(f"Repo {self.name}: YAML syntax error: {e}")
+                except TypeError as e:
+                    logging.critical(f"Repo {self.name}: Data structure mismatch: {e}") 
         except:
             logging.warning(f"{self.name} @ {self.url} has not been initalized")
 
@@ -149,8 +146,8 @@ class Repository:
         self.__init__(self.name, self.url, self.settings)
 
     def check_if_package_exists(self, package: str) -> bool:
-        return package in self.available_packages
+        return package in self.packages
 
     # Precondition, a package that exists in this repo
-    def get_package_ver(self, package: str) -> str:
-        return self.versions[package]
+    def get_package(self, package_name: str) -> str:
+        return self.packages[package_name]

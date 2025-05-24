@@ -9,6 +9,8 @@ from rich.status import Status
 from rich.live import Live
 from rich.progress import BarColumn, Progress, TextColumn
 from rich.table import Column
+import yaml
+from neptune.classes.Package import Package
 from neptune.classes.NeptuneSettings import NeptuneSettings
 from neptune.classes.Repository import Repository
 from neptune.classes.Utils import Utils
@@ -26,31 +28,18 @@ class System:
         self.postinstalls: list[str] = []
         self.utils: Utils = Utils(self.settings)
         self.wanted_packages: set[str] = set()
-
+        self.installed_packages = set()
         try:
-            self.installed_packages = set(
-                open(f"{self.settings.lib_dir}/installed_package", "r")
-                .read()
-                .splitlines()
-            )
-            with open(f"{self.settings.lib_dir}/versions", "r") as file:
-                self.versions = dict(
-                    line.strip().split(": ") for line in file if line.strip()
-                )
-        except FileNotFoundError:
-            logging.critical(
-                "Unless you are installing Tucana by-hand (in which case run sync), you have a serious problem"
-            )
-            logging.critical(
-                "The installed_packages or versions file is missing, please correct"
-            )
-            sys.exit(1)
-        if os.path.isfile(f"{self.settings.lib_dir}/wanted_packages"):
-            self.wanted_packages = set(
-                open(f"{self.settings.lib_dir}/wanted_packages", "r")
-                .read()
-                .splitlines()
-            )
+            with open(f"{self.settings.lib_dir}/system-packages.yaml", "r") as f:
+                try:
+                    raw_data = yaml.safe_load(f)
+                    self.packages = {name: Package(**metadata) for name, metadata in raw_data.items()}
+                except yaml.YAMLError as e:
+                    logging.critical(f"YAML syntax error: {e}")
+                except TypeError as e:
+                    logging.critical(f"Data structure mismatch: {e}")
+        except OSError as e:
+            logging.critical(f"Could not open file: {e}")
 
     def postinst(self):
         for package in self.postinstalls:
