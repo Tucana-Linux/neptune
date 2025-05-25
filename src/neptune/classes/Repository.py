@@ -34,8 +34,10 @@ class Repository:
                     self.packages = {name: Package(**metadata, repo=self.name, name=package_name) for package_name, metadata in raw_data.items()}
                 except yaml.YAMLError as e:
                     logging.critical(f"Repo {self.name}: YAML syntax error: {e}")
+                    sys.exit(1)
                 except TypeError as e:
                     logging.critical(f"Repo {self.name}: Data structure mismatch: {e}") 
+                    sys.exit(1)
         except Exception:
             logging.warning(f"{self.name} @ {self.url} has not been initalized")
 

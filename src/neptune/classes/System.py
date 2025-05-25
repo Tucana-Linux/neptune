@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 from typing import Any
 
 from rich.console import Console, Group
@@ -34,10 +35,13 @@ class System:
                     self.system_packages : dict[str, Package]= {name: Package(**metadata, name=name) for name, metadata in raw_data.items()}
                 except yaml.YAMLError as e:
                     logging.critical(f"YAML syntax error: {e}")
+                    sys.exit(1)
                 except TypeError as e:
                     logging.critical(f"Data structure mismatch: {e}")
+                    sys.exit(1)
         except OSError as e:
             logging.critical(f"Could not open file: {e}")
+            sys.exit(1)
 
     def postinst(self):
         for package in self.postinstalls:

@@ -112,7 +112,7 @@ class Utils:
             system_packages = {}
 
         for package_name in temp_packages:
-            if (package_name not in list(processing_dict.keys())) and (
+            if (package_name not in processing_dict) and (
                 package_name not in system_packages 
             ):
                 repo: Repository = self.find_repo_with_best_version(package_name)
@@ -125,6 +125,7 @@ class Utils:
                     logging.critical(
                         f"Error: Dependencies for {package_name} could not be found: depends: {depends}, this is a repository bug, please report to your repo admin. The unavailable package in question is the one shown in the line above this message"
                     )
+                    sys.exit(1)
                 processing_dict[package_name] = package
                 self.get_depends(
                     depends,
