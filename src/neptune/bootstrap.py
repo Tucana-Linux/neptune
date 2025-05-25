@@ -76,15 +76,15 @@ def bootstrap():
     frontend.sync()
 
     print("Getting dependencies")
-    packages : list[Package] = system.utils.get_depends(set(["base"]), check_installed=False)
+    packages : list[Package] = system.utils.get_depends(set(["base"]))
     if not settings.yes_mode:
-        print(f"Packages to install: {" ".join(packages)}")
+        print(f"Packages to install: {" ".join([pkg.name for pkg in packages])}")
         confirmation = input(
             f"You are about to bootstrap {path}, would you like to continue? [Y/n] "
         )
         if not (confirmation == "y" or confirmation == "" or confirmation == "Y"):
             print("Aborting")
             sys.exit(0)
-    system.install_packages(packages)
-    system.wanted_packages.add("base")
+    system.install_packages(set(packages))
+    system.system_packages["base"].wanted = True
     system.save_state()

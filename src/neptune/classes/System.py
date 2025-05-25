@@ -27,7 +27,6 @@ class System:
         self.settings: NeptuneSettings = settings
         self.postinstalls: list[str] = []
         self.utils: Utils = Utils(self.settings)
-        self.wanted_packages: set[str] = set()
         try:
             with open(f"{self.settings.lib_dir}/system-packages.yaml", "r") as f:
                 try:

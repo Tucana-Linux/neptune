@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, Optional
+from typing import Optional
 
 from packaging.version import Version
 from neptune.classes.Package import Package
@@ -135,22 +135,22 @@ class Utils:
         return packages
 
     def check_for_updates(
-        self, installed_packages: set[str], versions: dict[str, str]
-    ) -> list[str]:
-        updates: list[str] = []
+        self, system_packages: dict[str, Package]
+    ) -> list[Package]:
+        updates: list[Package] = []
 
-        for package in installed_packages:
+        for package in system_packages.values():
             # ignore unavailable packages
-            if not self.check_if_package_exists(package):
+            if not self.check_if_package_exists(package.name):
                 continue
-            best_repo = self.find_repo_with_best_version(package)
-            best_ver = best_repo.get_package(package).version
+            best_repo : Repository = self.find_repo_with_best_version(package.name)
+            best_ver : str = best_repo.get_package(package.name).version
             logging.debug(
                 f"Best version for {package} is {best_ver} from {best_repo.name}"
             )
-            logging.debug(f"Current version of {package} is {versions[package]}")
+            logging.debug(f"Current version of {package.name} is {package.version}")
             if Version(self.version_normalizer(best_ver)) > Version(
-                self.version_normalizer(versions[package])
+                self.version_normalizer(package.version)
             ):
                 updates.append(package)
 
@@ -165,27 +165,28 @@ class Utils:
 
     def recalculate_system_depends(
         self, system_packages: dict[str, Package]
-    ) -> list[list[Any]]:
+    ) -> tuple[list[Package], list[str]]:
         
         # Remove only uses strings internally so only use strongs here
         remove: list[str] = []
         # check to see if anything currently installed is no longer avaliable
         remove.extend(self.check_if_packages_exist_return_packages(system_packages))
-        wanted_packages: set[str] = {package.name for package in system_packages.values() if package.wanted}
+        wanted_package_names: set[str] = {package.name for package in system_packages.values() if package.wanted}
         logging.debug(
-            f"Recalculating system dependencies, Current wanted packages: {wanted_packages} "
+            f"Recalculating system dependencies, Current wanted packages: {wanted_package_names} "
         )
         # no installed packages here because it's not needed check_installed is already false
         depends_of_wanted_packages : list[Package] = self.get_depends(
-            temp_packages=wanted_packages
+            temp_packages=wanted_package_names
         )
 
         install = [
             pkg for pkg in depends_of_wanted_packages if pkg.name not in system_packages.keys()
         ]
         remove += [
-            pkg.name for pkg in system_packages.values() if pkg not in {pkg.name for pkg in depends_of_wanted_packages}
+            pkg.name for pkg in system_packages.values() if pkg.name not in {p.name for p in depends_of_wanted_packages}
         ]
         logging.debug(f"Recalculator says to remove {remove}")
         logging.debug(f"Recalculator says to install {install}")
-        return [install, remove]
+        return (install, remove)
+    
