@@ -4,6 +4,7 @@ import sys
 import os
 from neptune.classes.Frontend import Frontend
 from neptune.classes.NeptuneSettings import NeptuneSettings
+from neptune.classes.Package import Package
 from neptune.classes.System import System
 
 # This runs completely standalone from __init__ and therefore a lot of functions are repeated
@@ -75,7 +76,7 @@ def bootstrap():
     frontend.sync()
 
     print("Getting dependencies")
-    packages = system.utils.get_depends(set(["base"]), check_installed=False)
+    packages : list[Package] = system.utils.get_depends(set(["base"]), check_installed=False)
     if not settings.yes_mode:
         print(f"Packages to install: {" ".join(packages)}")
         confirmation = input(

@@ -2,8 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import yaml
-
-from neptune.classes import Package
+from neptune.classes.Package import Package
 
 if TYPE_CHECKING:
     from neptune.classes.NeptuneSettings import NeptuneSettings
@@ -15,7 +14,7 @@ import sys
 
 import requests
 
-# only for the type decl
+
 
 
 class Repository:
@@ -23,21 +22,21 @@ class Repository:
         self.name: str = name
         self.url: str = url
         # type decl causes circular dependency # TODO fix this
-        self.settings = settings
+        self.settings : NeptuneSettings = settings
         if not (len(self.name) >= 1 and len(self.url) >= 1):
             logging.critical("Configuration error with repos")
             sys.exit(1)
         self.packages = {}
         try:
-            with open(f"{self.settngs.cache_dir}/repos/{self.name}/system-packages.yaml", "r") as f:
+            with open(f"{self.settings.cache_dir}/repos/{self.name}/packages.yaml", "r") as f:
                 try:
                     raw_data = yaml.safe_load(f)
-                    self.packages = {name: Package(**metadata) for name, metadata in raw_data.items()}
+                    self.packages = {name: Package(**metadata, repo=self.name, name=package_name) for package_name, metadata in raw_data.items()}
                 except yaml.YAMLError as e:
                     logging.critical(f"Repo {self.name}: YAML syntax error: {e}")
                 except TypeError as e:
                     logging.critical(f"Repo {self.name}: Data structure mismatch: {e}") 
-        except:
+        except Exception:
             logging.warning(f"{self.name} @ {self.url} has not been initalized")
 
     def check_connection(self):
@@ -124,13 +123,13 @@ class Repository:
             os.makedirs(f"{self.settings.cache_dir}/repos/{self.name}/depend")
         logging.info(f"{self.name}: Getting Available Packages")
         self.download_link(
-            f"available-packages/packages",
+            "available-packages/packages",
             f"{self.settings.cache_dir}/repos/{self.name}/available-packages",
         )
 
         logging.info(f"{self.name}: Getting dependency files")
         self.download_link(
-            f"depend/depends.tar.xz",
+            "depend/depends.tar.xz",
             f"{self.settings.cache_dir}/repos/{self.name}/depend/depends.tar.xz",
         )
         os.chdir(f"{self.settings.cache_dir}/repos/{self.name}/depend")
@@ -139,7 +138,7 @@ class Repository:
         logging.info(f"{self.name}: Getting meta info")
         # self.download_link(f"available-packages/sha256", f'{self.settings.cache_dir}/repos/{self.name}/sha256')
         self.download_link(
-            f"available-packages/versions",
+            "available-packages/versions",
             f"{self.settings.cache_dir}/repos/{self.name}/versions",
         )
         # reinit
@@ -149,5 +148,5 @@ class Repository:
         return package in self.packages
 
     # Precondition, a package that exists in this repo
-    def get_package(self, package_name: str) -> str:
+    def get_package(self, package_name: str) -> Package:
         return self.packages[package_name]

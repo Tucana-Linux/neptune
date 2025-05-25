@@ -3,9 +3,10 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Optional
+from typing import Any, Optional
 
 from packaging.version import Version
+from neptune.classes.Package import Package
 from neptune.classes.Repository import Repository
 from neptune.classes.NeptuneSettings import NeptuneSettings
 
@@ -67,12 +68,15 @@ class Utils:
         for _, repo in self.settings.repositories.items():
             if not repo.check_if_package_exists(package):
                 continue
-            version = Version(self.version_normalizer(repo.get_package_ver(package)))
+            version = Version(self.version_normalizer(
+                repo.get_package(package).version
+                )
+            )
             if version > latest_ver:
                 latest_ver = version
                 best_repo = repo
         # just in case
-        if best_repo == None:
+        if best_repo is None:
             logging.critical(
                 f"Could not find a good repo for {package} even though it exists, THIS IS A BUG, please report to https://github.com/Tucana-Linux/issues"
             )
@@ -97,50 +101,37 @@ class Utils:
     def get_depends(
         self,
         temp_packages: set[str],
-        check_installed: bool,
-        installed_packages: Optional[set[str]] = None,
-        processing_set: Optional[set[str]] = None,
-    ):
+        system_packages: Optional[dict[str, Package]] = None,
+        processing_dict: Optional[dict[str, Package]] = None,
+    ) -> list[Package]:
         # This one should start none
-        if processing_set == None:
-            processing_set = set()
+        if processing_dict is None:
+            processing_dict = {}
         # this one may be null (recalculating system depends)
-        if installed_packages == None:
-            installed_packages = set()
+        if system_packages is None:
+            system_packages = {}
 
-        for package in temp_packages:
-            if (not package in processing_set) and (
-                not check_installed or not (package in installed_packages)
+        for package_name in temp_packages:
+            if (package_name not in list(processing_dict.keys())) and (
+                package_name not in system_packages 
             ):
-                processing_set.add(package)
-                try:
-                    depends: set[str] = set()
-                    repo: str = self.find_repo_with_best_version(package).name
-                    with open(
-                        f"{self.settings.cache_dir}/repos/{repo}/depend/depend-{package}",
-                        "r",
-                    ) as depend_file:
-                        depends = set(depend_file.read().split())
-                except FileNotFoundError:
-                    logging.warning(
-                        f"{package} depends file NOT found, something is SERIOUSLY WRONG"
-                    )
-                    continue
+                repo: Repository = self.find_repo_with_best_version(package_name)
+                package = repo.get_package(package_name)
+                depends: set[str] = set(package.depends)
                 # Validate then recurse
-                logging.debug(f"{package} has depends {depends}")
-                logging.debug(f"Current packages set: {processing_set}")
+                logging.debug(f"{package_name} has depends {depends}")
+                logging.debug(f"Current packages set: {processing_dict}")
                 if not self.check_if_packages_exist(depends):
                     logging.critical(
-                        f"Error: Dependencies for {package} could not be found: depends: {depends}, this is a repository bug, please report to your repo admin. The unavailable package in question is the one shown in the line above this message"
+                        f"Error: Dependencies for {package_name} could not be found: depends: {depends}, this is a repository bug, please report to your repo admin. The unavailable package in question is the one shown in the line above this message"
                     )
-                    sys.exit(1)
+                processing_dict[package_name] = package
                 self.get_depends(
                     depends,
-                    check_installed,
-                    processing_set=processing_set,
-                    installed_packages=installed_packages,
+                    processing_dict=processing_dict,
+                    system_packages=system_packages,
                 )
-        packages = [*processing_set]
+        packages = list(processing_dict.values())
         return packages
 
     def check_for_updates(
@@ -153,7 +144,7 @@ class Utils:
             if not self.check_if_package_exists(package):
                 continue
             best_repo = self.find_repo_with_best_version(package)
-            best_ver = best_repo.get_package_ver(package)
+            best_ver = best_repo.get_package(package).version
             logging.debug(
                 f"Best version for {package} is {best_ver} from {best_repo.name}"
             )
@@ -165,32 +156,35 @@ class Utils:
 
         return updates
 
-    def check_if_packages_exist_return_packages(self, packages: set[str]) -> list[str]:
+    def check_if_packages_exist_return_packages(self, system_packages: dict[str, Package]) -> list[str]:
         packages_no_exist: list[str] = []
-        for package in packages:
+        for package in system_packages.keys():
             if not self.check_if_package_exists(package):
                 packages_no_exist.append(package)
         return packages_no_exist
 
     def recalculate_system_depends(
-        self, wanted_packages: set[str], installed_packages: set[str]
-    ) -> list[list[str]]:
+        self, system_packages: dict[str, Package]
+    ) -> list[list[Any]]:
+        
+        # Remove only uses strings internally so only use strongs here
         remove: list[str] = []
         # check to see if anything currently installed is no longer avaliable
-        remove.extend(self.check_if_packages_exist_return_packages(installed_packages))
+        remove.extend(self.check_if_packages_exist_return_packages(system_packages))
+        wanted_packages: set[str] = {package.name for package in system_packages.values() if package.wanted}
         logging.debug(
             f"Recalculating system dependencies, Current wanted packages: {wanted_packages} "
         )
         # no installed packages here because it's not needed check_installed is already false
-        depends_of_wanted_packages = self.get_depends(
-            temp_packages=wanted_packages, check_installed=False
+        depends_of_wanted_packages : list[Package] = self.get_depends(
+            temp_packages=wanted_packages
         )
 
         install = [
-            pkg for pkg in depends_of_wanted_packages if pkg not in installed_packages
+            pkg for pkg in depends_of_wanted_packages if pkg.name not in system_packages.keys()
         ]
         remove += [
-            pkg for pkg in installed_packages if pkg not in depends_of_wanted_packages
+            pkg.name for pkg in system_packages.values() if pkg not in {pkg.name for pkg in depends_of_wanted_packages}
         ]
         logging.debug(f"Recalculator says to remove {remove}")
         logging.debug(f"Recalculator says to install {install}")
