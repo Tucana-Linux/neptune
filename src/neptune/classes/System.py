@@ -1,16 +1,19 @@
+from dataclasses import asdict
 import logging
 import os
 import shutil
 import subprocess
 import sys
+from typing import Any
 
 from rich.console import Console, Group
 from rich.status import Status
 from rich.live import Live
 from rich.progress import BarColumn, Progress, TextColumn
 from rich.table import Column
+import yaml
+from neptune.classes.Package import Package
 from neptune.classes.NeptuneSettings import NeptuneSettings
-from neptune.classes.Repository import Repository
 from neptune.classes.Utils import Utils
 
 
@@ -25,32 +28,23 @@ class System:
         self.settings: NeptuneSettings = settings
         self.postinstalls: list[str] = []
         self.utils: Utils = Utils(self.settings)
-        self.wanted_packages: set[str] = set()
-
         try:
-            self.installed_packages = set(
-                open(f"{self.settings.lib_dir}/installed_package", "r")
-                .read()
-                .splitlines()
-            )
-            with open(f"{self.settings.lib_dir}/versions", "r") as file:
-                self.versions = dict(
-                    line.strip().split(": ") for line in file if line.strip()
-                )
-        except FileNotFoundError:
-            logging.critical(
-                "Unless you are installing Tucana by-hand (in which case run sync), you have a serious problem"
-            )
-            logging.critical(
-                "The installed_packages or versions file is missing, please correct"
-            )
+            with open(f"{self.settings.lib_dir}/system-packages.yaml", "r") as f:
+                try:
+                    raw_data: dict[str, dict[str, Any]] = yaml.safe_load(f)
+                    if raw_data is None: # type: ignore -- yaml.safe_load doesn't care about the annotation and will make it None anyways
+                        raw_data={}
+                        
+                    self.system_packages: dict[str, Package] = {
+                        name: Package(**metadata, name=name)
+                        for name, metadata in raw_data.items()
+                    }
+                except Exception as e:
+                    logging.critical(f"YAML syntax error: {e}")
+                    sys.exit(1)
+        except OSError as e:
+            logging.critical(f"Could not open file: {e}")
             sys.exit(1)
-        if os.path.isfile(f"{self.settings.lib_dir}/wanted_packages"):
-            self.wanted_packages = set(
-                open(f"{self.settings.lib_dir}/wanted_packages", "r")
-                .read()
-                .splitlines()
-            )
 
     def postinst(self):
         for package in self.postinstalls:
@@ -74,34 +68,33 @@ class System:
         for file in to_remove:
             self.check_for_and_delete(file)
 
-    def remove_package(self, package: str) -> None:
+    def remove_package(self, package_name: str) -> None:
         # This does NOT do depend checking. This will remove ANY package given to it even if it required for system operation.
         # Use recalculate_system_depends BEFORE using this package
         try:
             files = set(
-                open(f"{self.settings.lib_dir}/file-lists/{package}.list", "r")
+                open(f"{self.settings.lib_dir}/file-lists/{package_name}.list", "r")
                 .read()
                 .splitlines()
             )
         except FileNotFoundError:
-            print(f"File list for {package} not found, skipping removal")
+            print(f"File list for {package_name} not found, skipping removal")
             return
-        print(f"Removing {package}")
+        print(f"Removing {package_name}")
         for file in files:
             # os/subprocesses remove function will crash the system if it's removing something that is currently in use
             self.check_for_and_delete(f"{self.settings.install_path}/{file}")
-        self.installed_packages.remove(package)
-        if package in self.wanted_packages:
-            self.wanted_packages.remove(package)
-        self.versions.pop(package)
+        self.system_packages.pop(package_name)
 
-    def remove_packages(self, packages: list[str]):
+    def remove_packages(self, package_names: list[str]):
         text_column = TextColumn("{task.description}", table_column=Column(ratio=1))
         bar_column = BarColumn(bar_width=80, table_column=Column(ratio=5))
         with Progress(text_column, bar_column, expand=True) as progress:
-            remove_task = progress.add_task("[red]Removing...", total=len(packages))
-            for package in packages:
-                self.remove_package(package)
+            remove_task = progress.add_task(
+                "[red]Removing...", total=len(package_names)
+            )
+            for package_name in package_names:
+                self.remove_package(package_name)
                 progress.update(remove_task, advance=1)
 
     def copy2_perserve_links(self, src: str, dst: str) -> None:
@@ -113,7 +106,7 @@ class System:
         if not os.path.islink(src_path):
             stat_info = os.stat(src_path)
         shutil.move(src_path, dest_path, copy_function=self.copy2_perserve_links)
-        if stat_info != None:
+        if stat_info is not None:
             os.chmod(dest_path, stat_info.st_mode)
             os.chown(dest_path, stat_info.st_uid, stat_info.st_gid)
         logging.debug(
@@ -127,7 +120,7 @@ class System:
         logging.debug(
             f"Install Path to install {package} is {self.settings.install_path}"
         )
-        for root, dirs, files in os.walk(f".", followlinks=False):
+        for root, dirs, files in os.walk(".", followlinks=False):
             for dir in dirs:
                 src_path = os.path.join(root, dir)
                 abs_path = os.path.join(root, dir)
@@ -165,47 +158,52 @@ class System:
 
     def install_package(
         self,
-        package: str,
-        repo: Repository,
+        package: Package,
         console_line: Status,
-        reinstalling: bool = False,
     ) -> None:
         if not os.path.exists(self.settings.cache_dir):
             os.makedirs(self.settings.cache_dir)
         os.chdir(self.settings.cache_dir)
 
         # we can leave the other ones blank since we are using a package
-        repo.download_link("", "", package=package, console_line=console_line)
+        self.settings.repositories[package.repo].download_link(
+            "", "", package=package.name, console_line=console_line
+        )
 
-        console_line.update(f"{package} Extracting...")
-        subprocess.run(f"tar -xpf {package}.tar.xz", shell=True)
+        console_line.update(f"{package.name} Extracting...")
+        subprocess.run(f"tar -xpf {package.name}.tar.xz", shell=True)
 
-        logging.info(f"Generating File List for {package}")
+        logging.info(f"Generating File List for {package.name}")
 
-        file_list = self.utils.generate_file_list(package)
-        if os.path.isfile(f"{self.settings.lib_dir}/file-lists/{package}.list"):
-            self.remove_old_files(package, file_list)
+        file_list = self.utils.generate_file_list(package.name)
+        if os.path.isfile(f"{self.settings.lib_dir}/file-lists/{package.name}.list"):
+            self.remove_old_files(package.name, file_list)
 
-        open(f"{self.settings.lib_dir}/file-lists/{package}.list", "w").write(
+        open(f"{self.settings.lib_dir}/file-lists/{package.name}.list", "w").write(
             "\n".join(file_list)
         )
 
-        console_line.update(f"{package} Installing...")
+        console_line.update(f"{package.name} Installing...")
 
-        if os.path.exists(f"{package}/postinst"):
-            self.postinstalls.append(package)
-            subprocess.run(f"cp {package}/postinst /tmp/{package}-postinst", shell=True)
+        if os.path.exists(f"{package.name}/postinst"):
+            self.postinstalls.append(package.name)
+            subprocess.run(
+                f"cp {package.name}/postinst /tmp/{package.name}-postinst", shell=True
+            )
 
-        self.install_files(package)
+        self.install_files(package.name)
+        # TODO set wanted might cause keyerror
+        if package.name in self.system_packages and self.system_packages[package.name].wanted:
+            package.wanted = True
+            
+        self.system_packages[package.name] = package
 
-        if not reinstalling:
-            self.installed_packages.add(package)
-            self.versions[package] = repo.get_package_ver(package)
+        subprocess.run(f"rm -rf {package.name}", shell=True)
+        subprocess.run(f"rm -f {package.name}.tar.xz", shell=True)
 
-        subprocess.run(f"rm -rf {package}", shell=True)
-        subprocess.run(f"rm -f {package}.tar.xz", shell=True)
-
-    def install_packages(self, packages: list[str], reinstalling: bool = False):
+    def install_packages(self, packages: set[Package]):
+        # This does NOT run get depends before, in order to
+        # get the objects needed to pass into this use get_depends
         console = Console()
         text_column = TextColumn("{task.description}", table_column=Column(ratio=1))
         bar_column = BarColumn(bar_width=None, table_column=Column(ratio=5))
@@ -228,10 +226,7 @@ class System:
         with Live(get_status_group(), refresh_per_second=10, console=console) as live:
 
             for package in packages:
-                repo = self.utils.find_repo_with_best_version(package)
-                self.install_package(
-                    package, repo, console_line=current_line, reinstalling=False
-                )
+                self.install_package(package, console_line=current_line)
                 status_lines.append(rf" {package} \[[bold blue]✔[/bold blue]]")
                 progress.update(task, advance=1)
                 live.update(get_status_group())
@@ -241,18 +236,14 @@ class System:
             self.postinst()
 
     def save_state(self):
-        with open(
-            f"{self.settings.install_path}/var/lib/neptune/wanted_packages", "w"
-        ) as wanted_package_file:
-            for package in self.wanted_packages:
-                wanted_package_file.write(f"{package}\n")
-        with open(
-            f"{self.settings.install_path}/var/lib/neptune/installed_package", "w"
-        ) as installed_package_file:
-            for package in self.installed_packages:
-                installed_package_file.write(f"{package}\n")
-        with open(
-            f"{self.settings.install_path}/var/lib/neptune/versions", "w"
-        ) as versions_file:
-            for package, version in self.versions.items():
-                versions_file.write(f"{package}: {version}\n")
+        # Convert to serializable dict (no name inside, key is the name)
+        packages_as_dict: dict[str, dict[str, Any]] = {
+            package_name: {
+                k: v for k, v in asdict(package_metadata).items() if k != "name"
+            }
+            for package_name, package_metadata in self.system_packages.items()
+        }
+
+        # Save to YAML
+        with open(f"{self.settings.lib_dir}/system-packages.yaml", "w") as f:
+            yaml.dump(packages_as_dict, f)

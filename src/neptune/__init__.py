@@ -32,6 +32,7 @@ def run_operation(operation: str, frontend: Frontend):
 
 def main():
     # also initalizes all the functions variables
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     logging.debug(f"Arguments: {sys.argv}")
     settings = NeptuneSettings(arguments=sys.argv)
     system = System(settings)
@@ -39,7 +40,6 @@ def main():
     system.settings.parse_config()
     system.settings.parse_repos()
     system.settings.parse_arguments()
-    logging.basicConfig(stream=sys.stdout, level=system.settings.debug_level)
     # operation always defined will exit if not
     logging.debug(f"Operation: {system.settings.operation}")
     run_operation(system.settings.operation, frontend)

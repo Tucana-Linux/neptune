@@ -1,6 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+import yaml
+from neptune.classes.Package import Package
+
 if TYPE_CHECKING:
     from neptune.classes.NeptuneSettings import NeptuneSettings
 from rich.status import Status
@@ -11,41 +14,44 @@ import sys
 
 import requests
 
-# only for the type decl
-
 
 class Repository:
     def __init__(self, name: str, url: str, settings: NeptuneSettings):
         self.name: str = name
         self.url: str = url
         # type decl causes circular dependency # TODO fix this
-        self.settings = settings
+        self.settings: NeptuneSettings = settings
         if not (len(self.name) >= 1 and len(self.url) >= 1):
             logging.critical("Configuration error with repos")
             sys.exit(1)
-        self.available_packages: set[str] = set()
-        self.versions = {}
+        self.packages = {}
         try:
-            self.available_packages = set(
-                open(
-                    f"{self.settings.cache_dir}/repos/{self.name}/available-packages",
-                    "r",
-                )
-                .read()
-                .splitlines()
-            )
             with open(
-                f"{self.settings.cache_dir}/repos/{self.name}/versions", "r"
-            ) as file:
-                self.versions = dict(
-                    line.strip().split(": ") for line in file if line.strip()
-                )
-        except:
+                f"{self.settings.cache_dir}/repos/{self.name}/packages.yaml", "r"
+            ) as f:
+                try:
+                    raw_data = yaml.safe_load(f)
+                    self.packages = {
+                        package_name: Package(
+                            **metadata, repo=self.name, name=package_name
+                        )
+                        for package_name, metadata in raw_data.items()
+                    }
+                    logging.info(
+                        f"Repo {self.name} Packages available: {self.packages.keys()}"
+                    )
+                except yaml.YAMLError as e:
+                    logging.critical(f"Repo {self.name}: YAML syntax error: {e}")
+                    sys.exit(1)
+                except TypeError as e:
+                    logging.critical(f"Repo {self.name}: Data structure mismatch: {e}")
+                    sys.exit(1)
+        except Exception:
             logging.warning(f"{self.name} @ {self.url} has not been initalized")
 
     def check_connection(self):
         try:
-            check_file = requests.head(f"{self.url}/available-packages/versions")
+            check_file = requests.head(f"{self.url}/available-packages/packages.yaml")
             if check_file.status_code != requests.codes.ok:
                 logging.warning(
                     f"{self.name} This does not seem to be a Tucana repo server"
@@ -124,33 +130,19 @@ class Repository:
 
         if not os.path.exists(path=f"{self.settings.cache_dir}/repos/{self.name}/"):
             logging.info(f"Creating {self.name} cache directory")
-            os.makedirs(f"{self.settings.cache_dir}/repos/{self.name}/depend")
+            os.makedirs(f"{self.settings.cache_dir}/repos/{self.name}")
         logging.info(f"{self.name}: Getting Available Packages")
         self.download_link(
-            f"available-packages/packages",
-            f"{self.settings.cache_dir}/repos/{self.name}/available-packages",
+            "available-packages/packages.yaml",
+            f"{self.settings.cache_dir}/repos/{self.name}/packages.yaml",
         )
 
-        logging.info(f"{self.name}: Getting dependency files")
-        self.download_link(
-            f"depend/depends.tar.xz",
-            f"{self.settings.cache_dir}/repos/{self.name}/depend/depends.tar.xz",
-        )
-        os.chdir(f"{self.settings.cache_dir}/repos/{self.name}/depend")
-        subprocess.run("tar -xf depends.tar.xz", shell=True)
-
-        logging.info(f"{self.name}: Getting meta info")
-        # self.download_link(f"available-packages/sha256", f'{self.settings.cache_dir}/repos/{self.name}/sha256')
-        self.download_link(
-            f"available-packages/versions",
-            f"{self.settings.cache_dir}/repos/{self.name}/versions",
-        )
         # reinit
         self.__init__(self.name, self.url, self.settings)
 
     def check_if_package_exists(self, package: str) -> bool:
-        return package in self.available_packages
+        return package in self.packages
 
     # Precondition, a package that exists in this repo
-    def get_package_ver(self, package: str) -> str:
-        return self.versions[package]
+    def get_package(self, package_name: str) -> Package:
+        return self.packages[package_name]

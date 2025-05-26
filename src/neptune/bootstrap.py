@@ -4,6 +4,7 @@ import sys
 import os
 from neptune.classes.Frontend import Frontend
 from neptune.classes.NeptuneSettings import NeptuneSettings
+from neptune.classes.Package import Package
 from neptune.classes.System import System
 
 # This runs completely standalone from __init__ and therefore a lot of functions are repeated
@@ -51,7 +52,7 @@ def parse_arguments():
             arguments.remove(valid_cli_arguments[arg])
 
 
-def create_inital_files():
+def create_initial_files():
     os.makedirs(settings.cache_dir)
     os.makedirs(f"{settings.lib_dir}/file-lists")
     os.makedirs(f"{settings.cache_dir}/depend")
@@ -70,20 +71,20 @@ def bootstrap():
     if not os.listdir(path) == []:
         print("This directory is not empty!")
         sys.exit(1)
-    create_inital_files()
+    create_initial_files()
     # This sync would sync the system about to be bootstrapped which isn't advisable.
     frontend.sync()
 
     print("Getting dependencies")
-    packages = system.utils.get_depends(set(["base"]), check_installed=False)
+    packages: list[Package] = system.utils.get_depends(set(["base"]))
     if not settings.yes_mode:
-        print(f"Packages to install: {" ".join(packages)}")
+        print(f"Packages to install: {" ".join([pkg.name for pkg in packages])}")
         confirmation = input(
             f"You are about to bootstrap {path}, would you like to continue? [Y/n] "
         )
         if not (confirmation == "y" or confirmation == "" or confirmation == "Y"):
             print("Aborting")
             sys.exit(0)
-    system.install_packages(packages)
-    system.wanted_packages.add("base")
+    system.install_packages(set(packages))
+    system.system_packages["base"].wanted = True
     system.save_state()
