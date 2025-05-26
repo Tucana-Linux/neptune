@@ -192,7 +192,10 @@ class System:
             )
 
         self.install_files(package.name)
-
+        # TODO set wanted might cause keyerror
+        if package.name in self.system_packages and self.system_packages[package.name].wanted:
+            package.wanted = True
+            
         self.system_packages[package.name] = package
 
         subprocess.run(f"rm -rf {package.name}", shell=True)

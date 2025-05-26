@@ -142,15 +142,15 @@ class Utils:
             if not self.check_if_package_exists(package.name):
                 continue
             best_repo: Repository = self.find_repo_with_best_version(package.name)
-            best_ver: str = best_repo.get_package(package.name).version
+            best_package: Package = best_repo.get_package(package.name)
             logging.debug(
-                f"Best version for {package} is {best_ver} from {best_repo.name}"
+                f"Best version for {package} is {best_package.version} from {best_repo.name}"
             )
             logging.debug(f"Current version of {package.name} is {package.version}")
-            if Version(self.version_normalizer(best_ver)) > Version(
+            if Version(self.version_normalizer(best_package.version)) > Version(
                 self.version_normalizer(package.version)
             ):
-                updates.append(package)
+                updates.append(best_package)
 
         return updates
 

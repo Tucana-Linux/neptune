@@ -52,7 +52,7 @@ def parse_arguments():
             arguments.remove(valid_cli_arguments[arg])
 
 
-def create_inital_files():
+def create_initial_files():
     os.makedirs(settings.cache_dir)
     os.makedirs(f"{settings.lib_dir}/file-lists")
     os.makedirs(f"{settings.cache_dir}/depend")
@@ -71,7 +71,7 @@ def bootstrap():
     if not os.listdir(path) == []:
         print("This directory is not empty!")
         sys.exit(1)
-    create_inital_files()
+    create_initial_files()
     # This sync would sync the system about to be bootstrapped which isn't advisable.
     frontend.sync()
 

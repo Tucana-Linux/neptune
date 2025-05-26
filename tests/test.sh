@@ -160,8 +160,9 @@ EOF
   if [[ $repo == "2" ]]; then
     cd $REPO2_DIR/packages || exit
   fi
+  export PKG_NAME=$pkgname
   if [ -s ../available-packages/packages.yaml ] && grep -q '[^[:space:]]' ../available-packages/packages.yaml; then
-    yq -i 'del(.[strenv(pkgname)])' ../available-packages/packages.yaml
+    yq -i 'del(.[strenv(PKG_NAME)])' ../available-packages/packages.yaml
   fi
   python3 $GIT_LOCATION/tests/env-to-yaml.py "$pkgname" "$depends" "$version" "100" "100" "$date" >> ../available-packages/packages.yaml
 
@@ -546,6 +547,7 @@ function update_test() {
   # 3) Install libupdatenew
   # 4) Not error
   # This does not test multi-repo support
+  # install-test-depend was technically updated before, ignore that output in the logs
 
   make_mock_package "update-test-root" "libupdate" "" "" "1" "1.0.0"
   make_mock_package "libupdate" "" "" "" "1" "1.0.0"
@@ -597,7 +599,12 @@ function update_test() {
 
   version_status=$(yq '.update-test-root.version' $CHROOT/var/lib/neptune/system-packages.yaml)
   if [[ $version_status != "1.0.1" ]]; then
-    echo "The system-packages.yaml version was not updated or is otherwise broken"
+    echo "The system-packages.yaml version was not updated or is otherwise broken, version not updated"
+    return 1
+  fi
+  wanted_status=$(yq '.update-test-root.wanted' $CHROOT/var/lib/neptune/system-packages.yaml)
+  if [[ $wanted_status != "true" ]]; then
+    echo "The system-packages.yaml version was not updated or is otherwise broken, wanted was reset to false"
     return 1
   fi
 
