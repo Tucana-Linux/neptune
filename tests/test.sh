@@ -160,7 +160,9 @@ EOF
   if [[ $repo == "2" ]]; then
     cd $REPO2_DIR/packages || exit
   fi
-  yq -i 'del(.[strenv(pkgname)])' ../available-packages/packages.yaml
+  if [ -s ../available-packages/packages.yaml ]; then
+    yq -i 'del(.[strenv(pkgname)])' ../available-packages/packages.yaml
+  fi
   python3 $GIT_LOCATION/tests/env-to-yaml.py "$pkgname" "$depends" "$version" "100" "100" "$date" >> ../available-packages/packages.yaml
 
 
