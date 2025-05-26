@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 
 @dataclass
@@ -11,11 +11,11 @@ class Package:
     repo: str
     # Last update on the repo side not the system side
     last_update: int
-    depends: Optional[list[str]] = field(default_factory=list)
+    depends: Optional[list[str]] = field(default_factory=list[str])
     wanted: Optional[bool] = False
 
     # make it hashable but allow modification
-    def __eq__(self, other):
+    def __eq__(self, other : Any):
         if not isinstance(other, Package):
             return NotImplemented
 

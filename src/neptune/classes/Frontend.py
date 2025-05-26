@@ -1,5 +1,4 @@
 import sys
-from neptune.classes.Package import Package
 from neptune.classes.System import System
 
 
