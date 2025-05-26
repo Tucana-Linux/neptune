@@ -104,6 +104,8 @@ class Frontend:
                 )
                 sys.exit(1)
         system_packages_without_the_ones_to_remove = dict(self.system.system_packages)
+        for package_name in package_names_user_wants_removed:
+            system_packages_without_the_ones_to_remove.pop(package_name)
         
         absolute_packages_to_remove: list[str] = (
             self.system.utils.recalculate_system_depends(
