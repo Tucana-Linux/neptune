@@ -32,6 +32,9 @@ class System:
             with open(f"{self.settings.lib_dir}/system-packages.yaml", "r") as f:
                 try:
                     raw_data: dict[str, dict[str, Any]] = yaml.safe_load(f)
+                    if raw_data is None: # type: ignore -- yaml.safe_load doesn't care about the annotation and will make it None anyways
+                        raw_data={}
+                        
                     self.system_packages: dict[str, Package] = {
                         name: Package(**metadata, name=name)
                         for name, metadata in raw_data.items()
