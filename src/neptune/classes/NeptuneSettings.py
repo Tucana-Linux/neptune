@@ -15,7 +15,7 @@ class NeptuneSettings:
         self.run_postinst: bool = True
         self.no_depend_mode: bool = False
         self.stream_chunk_size: int = 8192
-        self.debug_level: int = 30
+        self.debug_level: int = 10
         self.repositories: dict[str, Repository] = {}
         self.lib_dir: str = f"{self.install_path}/var/lib/neptune/"
         self.cache_dir: str = f"{self.install_path}/var/lib/neptune/cache"

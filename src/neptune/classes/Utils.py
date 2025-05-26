@@ -68,9 +68,8 @@ class Utils:
         for _, repo in self.settings.repositories.items():
             if not repo.check_if_package_exists(package):
                 continue
-            version = Version(self.version_normalizer(
-                repo.get_package(package).version
-                )
+            version = Version(
+                self.version_normalizer(repo.get_package(package).version)
             )
             if version > latest_ver:
                 latest_ver = version
@@ -113,7 +112,7 @@ class Utils:
 
         for package_name in temp_packages:
             if (package_name not in processing_dict) and (
-                package_name not in system_packages 
+                package_name not in system_packages
             ):
                 repo: Repository = self.find_repo_with_best_version(package_name)
                 package = repo.get_package(package_name)
@@ -135,17 +134,15 @@ class Utils:
         packages = list(processing_dict.values())
         return packages
 
-    def check_for_updates(
-        self, system_packages: dict[str, Package]
-    ) -> list[Package]:
+    def check_for_updates(self, system_packages: dict[str, Package]) -> list[Package]:
         updates: list[Package] = []
 
         for package in system_packages.values():
             # ignore unavailable packages
             if not self.check_if_package_exists(package.name):
                 continue
-            best_repo : Repository = self.find_repo_with_best_version(package.name)
-            best_ver : str = best_repo.get_package(package.name).version
+            best_repo: Repository = self.find_repo_with_best_version(package.name)
+            best_ver: str = best_repo.get_package(package.name).version
             logging.debug(
                 f"Best version for {package} is {best_ver} from {best_repo.name}"
             )
@@ -157,7 +154,9 @@ class Utils:
 
         return updates
 
-    def check_if_packages_exist_return_packages(self, system_packages: dict[str, Package]) -> list[str]:
+    def check_if_packages_exist_return_packages(
+        self, system_packages: dict[str, Package]
+    ) -> list[str]:
         packages_no_exist: list[str] = []
         for package in system_packages.keys():
             if not self.check_if_package_exists(package):
@@ -167,27 +166,33 @@ class Utils:
     def recalculate_system_depends(
         self, system_packages: dict[str, Package]
     ) -> tuple[list[Package], list[str]]:
-        
+
         # Remove only uses strings internally so only use strongs here
         remove: list[str] = []
         # check to see if anything currently installed is no longer avaliable
         remove.extend(self.check_if_packages_exist_return_packages(system_packages))
-        wanted_package_names: set[str] = {package.name for package in system_packages.values() if package.wanted}
+        wanted_package_names: set[str] = {
+            package.name for package in system_packages.values() if package.wanted
+        }
         logging.debug(
             f"Recalculating system dependencies, Current wanted packages: {wanted_package_names} "
         )
         # no installed packages here because it's not needed check_installed is already false
-        depends_of_wanted_packages : list[Package] = self.get_depends(
+        depends_of_wanted_packages: list[Package] = self.get_depends(
             temp_packages=wanted_package_names
         )
+        logging.debug(f"Depends of wanted packages are {depends_of_wanted_packages}")
 
         install = [
-            pkg for pkg in depends_of_wanted_packages if pkg.name not in system_packages.keys()
+            pkg
+            for pkg in depends_of_wanted_packages
+            if pkg.name not in system_packages.keys()
         ]
         remove += [
-            pkg.name for pkg in system_packages.values() if pkg.name not in {p.name for p in depends_of_wanted_packages}
+            pkg.name
+            for pkg in system_packages.values()
+            if pkg.name not in {p.name for p in depends_of_wanted_packages}
         ]
         logging.debug(f"Recalculator says to remove {remove}")
         logging.debug(f"Recalculator says to install {install}")
         return (install, remove)
-    

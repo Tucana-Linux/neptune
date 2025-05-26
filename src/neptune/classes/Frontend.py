@@ -1,4 +1,5 @@
 import sys
+from neptune.classes.Package import Package
 from neptune.classes.System import System
 
 
@@ -27,7 +28,9 @@ class Frontend:
             print("Nothing to do all packages are installed")
             sys.exit()
         if not self.system.settings.yes_mode:
-            print(f"Packages to install: {" ".join([pkg.name for pkg in packages_to_install])}")
+            print(
+                f"Packages to install: {" ".join([pkg.name for pkg in packages_to_install])}"
+            )
             confirmation = input(
                 f"{len(packages_to_install)} packages are queued to install, would you like to continue? [Y/n] "
             )
@@ -55,11 +58,12 @@ class Frontend:
             if not (confirmation == "y" or confirmation == "" or confirmation == "Y"):
                 print("Aborting")
                 sys.exit(0)
-        packages = [self.system.system_packages[pkg] for pkg in arguments] 
+        packages = [self.system.system_packages[pkg] for pkg in arguments]
         self.system.install_packages(set(packages))
 
     def update(self):
-        updates = self.system.utils.check_for_updates(system_packages=self.system.system_packages
+        updates = self.system.utils.check_for_updates(
+            system_packages=self.system.system_packages
         )
         recalculated_depends = self.system.utils.recalculate_system_depends(
             system_packages=self.system.system_packages
@@ -73,7 +77,9 @@ class Frontend:
         if not self.system.settings.yes_mode:
             print(f"Packages to be updated: {" ".join([pkg.name for pkg in updates])}")
             if len(install) > 0:
-                print(f'Packages to be installed: {" ".join([pkg.name for pkg in install])}')
+                print(
+                    f'Packages to be installed: {" ".join([pkg.name for pkg in install])}'
+                )
             if len(remove) > 0:
                 print(f'Packages to be REMOVED: {" ".join(remove)}')
             confirmation = input("Would you like to continue? [Y/n] ")
@@ -88,8 +94,8 @@ class Frontend:
         if not len(self.system.settings.arguments) > 0:
             print("Usage: neptune remove {{PACKAGES}}")
             sys.exit(1)
-        packages_user_wants_removed: list[str] = self.system.settings.arguments
-        for package_name in packages_user_wants_removed:
+        package_names_user_wants_removed: list[str] = self.system.settings.arguments
+        for package_name in package_names_user_wants_removed:
             if package_name not in self.system.system_packages.keys():
                 print(f"{package_name} is not installed")
                 sys.exit(1)
@@ -99,13 +105,11 @@ class Frontend:
                 )
                 sys.exit(1)
         system_packages_without_the_ones_to_remove = dict(self.system.system_packages)
-        for package in packages_user_wants_removed:
-            system_packages_without_the_ones_to_remove.pop(package)
-
+        
         absolute_packages_to_remove: list[str] = (
             self.system.utils.recalculate_system_depends(
                 system_packages=system_packages_without_the_ones_to_remove,
-            )[1]
+            )[1] + package_names_user_wants_removed
         )
 
         if not self.system.settings.yes_mode:

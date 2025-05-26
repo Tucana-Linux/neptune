@@ -76,7 +76,7 @@ def bootstrap():
     frontend.sync()
 
     print("Getting dependencies")
-    packages : list[Package] = system.utils.get_depends(set(["base"]))
+    packages: list[Package] = system.utils.get_depends(set(["base"]))
     if not settings.yes_mode:
         print(f"Packages to install: {" ".join([pkg.name for pkg in packages])}")
         confirmation = input(

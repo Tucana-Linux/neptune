@@ -31,13 +31,15 @@ class System:
         try:
             with open(f"{self.settings.lib_dir}/system-packages.yaml", "r") as f:
                 try:
-                    raw_data = yaml.safe_load(f)
-                    self.system_packages : dict[str, Package]= {name: Package(**metadata, name=name) for name, metadata in raw_data.items()}
-                except yaml.YAMLError as e:
+                    raw_data: dict[str, dict[str, Any]] = yaml.safe_load(f)
+                    if raw_data is None:
+                        raw_data = {}
+                    self.system_packages: dict[str, Package] = {
+                        name: Package(**metadata, name=name)
+                        for name, metadata in raw_data.items()
+                    }
+                except Exception as e:
                     logging.critical(f"YAML syntax error: {e}")
-                    sys.exit(1)
-                except TypeError as e:
-                    logging.critical(f"Data structure mismatch: {e}")
                     sys.exit(1)
         except OSError as e:
             logging.critical(f"Could not open file: {e}")
@@ -87,7 +89,9 @@ class System:
         text_column = TextColumn("{task.description}", table_column=Column(ratio=1))
         bar_column = BarColumn(bar_width=80, table_column=Column(ratio=5))
         with Progress(text_column, bar_column, expand=True) as progress:
-            remove_task = progress.add_task("[red]Removing...", total=len(package_names))
+            remove_task = progress.add_task(
+                "[red]Removing...", total=len(package_names)
+            )
             for package_name in package_names:
                 self.remove_package(package_name)
                 progress.update(remove_task, advance=1)
@@ -161,7 +165,9 @@ class System:
         os.chdir(self.settings.cache_dir)
 
         # we can leave the other ones blank since we are using a package
-        self.settings.repositories[package.repo].download_link("", "", package=package.name, console_line=console_line)
+        self.settings.repositories[package.repo].download_link(
+            "", "", package=package.name, console_line=console_line
+        )
 
         console_line.update(f"{package.name} Extracting...")
         subprocess.run(f"tar -xpf {package.name}.tar.xz", shell=True)
@@ -180,7 +186,9 @@ class System:
 
         if os.path.exists(f"{package.name}/postinst"):
             self.postinstalls.append(package.name)
-            subprocess.run(f"cp {package.name}/postinst /tmp/{package.name}-postinst", shell=True)
+            subprocess.run(
+                f"cp {package.name}/postinst /tmp/{package.name}-postinst", shell=True
+            )
 
         self.install_files(package.name)
 
@@ -190,7 +198,7 @@ class System:
         subprocess.run(f"rm -f {package.name}.tar.xz", shell=True)
 
     def install_packages(self, packages: set[Package]):
-        # This does NOT run get depends before, in order to 
+        # This does NOT run get depends before, in order to
         # get the objects needed to pass into this use get_depends
         console = Console()
         text_column = TextColumn("{task.description}", table_column=Column(ratio=1))
@@ -214,9 +222,7 @@ class System:
         with Live(get_status_group(), refresh_per_second=10, console=console) as live:
 
             for package in packages:
-                self.install_package(
-                    package, console_line=current_line 
-                )
+                self.install_package(package, console_line=current_line)
                 status_lines.append(rf" {package} \[[bold blue]✔[/bold blue]]")
                 progress.update(task, advance=1)
                 live.update(get_status_group())
@@ -227,9 +233,11 @@ class System:
 
     def save_state(self):
         # Convert to serializable dict (no name inside, key is the name)
-        packages_as_dict : dict[str, dict[str, Any]] = { 
-         package_name: asdict(package_metadata) 
-         for package_name, package_metadata in self.system_packages.items()
+        packages_as_dict: dict[str, dict[str, Any]] = {
+            package_name: {
+                k: v for k, v in asdict(package_metadata).items() if k != "name"
+            }
+            for package_name, package_metadata in self.system_packages.items()
         }
 
         # Save to YAML

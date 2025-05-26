@@ -22,13 +22,7 @@ function cleanup() {
   echo "Cleaning up..."
   screen -X -S repo quit || true 
   screen -X -S repo2 quit || true
-  if [[ -d $CHROOT/dev ]]; then
-     umount "$CHROOT/dev/pts"
-     umount "$CHROOT/dev"
-     umount "$CHROOT/proc"
-     umount "$CHROOT/sys"
-  fi
-  rm -rf "$TEMP_DIR"
+  rm -rf "$REPO_DIR" "$REPO2_DIR"
 }
 
 trap cleanup EXIT
@@ -78,9 +72,8 @@ function chroot_setup() {
 function setup() {
   mkdir -p $REPO_DIR/{packages,depend,available-packages}
   mkdir -p $REPO2_DIR/{packages,depend,available-packages}
-  touch $CHROOT/var/lib/neptune/versions
-  touch $REPO_DIR/available-packages/versions
-  touch $REPO2_DIR/available-packages/versions
+  touch $REPO_DIR/available-packages/packages.yaml
+  touch $REPO2_DIR/available-packages/packages.yaml
   cd $GIT_LOCATION
   python3 -m build --wheel --skip-dependency-check
   if ! python3 -m installer --destdir=$CHROOT/neptune-test dist/*.whl; then
@@ -94,6 +87,7 @@ function setup() {
   rm -f $CHROOT/var/lib/neptune/wanted_packages
   touch $CHROOT/var/lib/neptune/installed_package
   touch $CHROOT/var/lib/neptune/wanted_packages
+  touch $CHROOT/var/lib/neptune/system-packages.yaml
   cat > $CHROOT/etc/neptune/config.yaml << "EOF"
 system-settings:
   install_path: "/"
@@ -126,7 +120,7 @@ function make_mock_package() {
   cd $TEMP_DIR || exit
   mkdir -p "$pkgname"/tests/"$pkgname"
   # Looks weird but essentially just to make sure that file operations are working throughout
-  date=$(date)
+  date=$(date +%s)
   echo "$pkgname $date" > "$pkgname"/tests/"$pkgname"/"$pkgname"
   # symlink for testing
   ln -sfv /tests/"$pkgname"/"$pkgname" "$pkgname"/tests/"$pkgname"/"$pkgname"-sym
@@ -136,7 +130,6 @@ function make_mock_package() {
     exit 1
   fi
 
-  cd - || exit
   if [[ $use_postinst == "true" ]]; then
     cat > "$pkgname"/postinst << EOF
 echo "This is a postinstall test"
@@ -167,26 +160,12 @@ EOF
   if [[ $repo == "2" ]]; then
     cd $REPO2_DIR/packages || exit
   fi
+  yq -i 'del(.[strenv(pkgname)])' ../available-packages/packages.yaml
+  python3 $GIT_LOCATION/tests/env-to-yaml.py "$pkgname" "$depends" "$version" "100" "100" "$date" >> ../available-packages/packages.yaml
 
-  yq -n \
-    --arg name "$pkgname" \
-    --arg deps "$depends" \
-    --arg version "$version" \
-    --argjson download_size 100 \
-    --argjson install_size 100 \
-    --arg last_update "$date" '
-    {
-      ($name): {
-        depends: ($deps | split(" ")),
-        version: $version,
-        download_size: $download_size,
-        install_size: $install_size,
-        last_update: $last_update
-      }
-    }
-  ' >> available-packages/packages.yaml
 
-  cd - || exit
+
+  cd $TEMP_DIR || exit
 }
 
 function p_or_f() {
@@ -409,11 +388,11 @@ function install_test_with_depends() {
     return 1
   fi
   wanted_status=$(yq '.libtest.wanted' $CHROOT/var/lib/neptune/system-packages.yaml)
-  if [[ $wanted_status == "true" ]]
+  if [[ $wanted_status == "true" ]]; then
     echo "Depend is wrongly registered as wanted"
     return 1
   fi
-  make_mock_package "install-test-depend" "install-test-depend" "" "" "1" "1.0.1"
+  make_mock_package "install-test-depend" "libtest" "" "" "1" "1.0.1"
   chroot $CHROOT /bin/bash -c "neptune install --y install-test-depend"
   if cat $CHROOT/tests/install-test-depend/version | grep "1.0.1"; then
     echo "Install attempted to install an already installed package"
@@ -615,7 +594,7 @@ function update_test() {
 
 
   version_status=$(yq '.update-test-root.version' $CHROOT/var/lib/neptune/system-packages.yaml)
-  if [[ $version_status != "1.0.1" ]]
+  if [[ $version_status != "1.0.1" ]]; then
     echo "The system-packages.yaml version was not updated or is otherwise broken"
     return 1
   fi
@@ -698,13 +677,13 @@ EOF
 
   wanted_status=$(yq '.base.wanted' $CHROOT/bootstrap/var/lib/neptune/system-packages.yaml)
 
-  if [[ $wanted_status != "true" ]]
+  if [[ $wanted_status != "true" ]]; then
     echo "base not set as wanted"
     return 1
   fi
   version_status=$(yq '.base.version' $CHROOT/bootstrap/var/lib/neptune/system-packages.yaml)
 
-  if [[ $version_status == "null" ]]
+  if [[ $version_status == "null" ]]; then
     echo "Package not set properly in bootstrap"
     return 1
   fi
