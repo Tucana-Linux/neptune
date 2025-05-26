@@ -116,7 +116,7 @@ class Utils:
             ):
                 repo: Repository = self.find_repo_with_best_version(package_name)
                 package = repo.get_package(package_name)
-                depends: set[str] = set(package.depends)
+                depends: set[str] = set(package.depends or [])
                 # Validate then recurse
                 logging.debug(f"{package_name} has depends {depends}")
                 logging.debug(f"Current packages set: {processing_dict}")
