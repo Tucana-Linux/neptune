@@ -1,7 +1,7 @@
 #!/bin/bash
 # TODO Version Normalizer Test
 # TODO Config settings test for loglevels
-# TODO Bootstrap test
+# TODO Add permission test
 REPO="http://192.168.1.143:88"
 # DO NOT CHANGE
 TEMP_DIR="$HOME/neptune-tests"
@@ -84,6 +84,7 @@ function setup() {
   mkdir -p $CHROOT/etc/neptune
   # Wipe installed_package and wanted_packages it doesn't interfere
   rm -f $CHROOT/var/lib/neptune/installed_package
+  rm -f $CHROOT/var/lib/neptune/system-packages.yaml
   rm -f $CHROOT/var/lib/neptune/wanted_packages
   touch $CHROOT/var/lib/neptune/installed_package
   touch $CHROOT/var/lib/neptune/wanted_packages
