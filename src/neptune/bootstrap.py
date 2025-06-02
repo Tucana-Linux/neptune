@@ -74,12 +74,14 @@ def bootstrap() -> None:
     settings.run_postinst = False
     settings.cache_dir = f"{path}/var/lib/neptune/cache"
     settings.lib_dir = f"{path}/var/lib/neptune/"
-    system = System(settings)
-    frontend = Frontend(system)
+
     if not os.listdir(path) == []:
         print("This directory is not empty!")
         sys.exit(1)
     create_initial_files(settings)
+
+    system = System(settings)
+    frontend = Frontend(system)
 
     # Re-init and sync the new system
     frontend.sync()
