@@ -96,22 +96,27 @@ class System:
             for package_name in package_names:
                 self.remove_package(package_name)
                 progress.update(remove_task, advance=1)
+                
+    def move_with_permissions(src_path: str, dest_path: str) -> None:
+        dir_name = os.path.dirname(dest_path)
+        base_name = os.path.basename(dest_path)
+        temp_path = os.path.join(dir_name, f".{base_name}.tmp")
 
-    def copy2_perserve_links(self, src: str, dst: str) -> None:
-        shutil.copy2(src, dst, follow_symlinks=False)
-
-    def move_with_permissions(self, src_path: str, dest_path: str) -> None:
-        # shutil.move doesn't copy file metadata
         stat_info = None
         if not os.path.islink(src_path):
             stat_info = os.stat(src_path)
-        shutil.move(src_path, dest_path, copy_function=self.copy2_perserve_links)
+
+        shutil.copy2(src_path, temp_path, follow_symlinks=False)
+
         if stat_info is not None:
-            os.chmod(dest_path, stat_info.st_mode)
-            os.chown(dest_path, stat_info.st_uid, stat_info.st_gid)
+            os.chmod(temp_path, stat_info.st_mode)
+            os.chown(temp_path, stat_info.st_uid, stat_info.st_gid)
+        os.replace(temp_path, dest_path)
+        os.remove(src_path)
         logging.debug(
-            f"Moved {src_path} to {dest_path} with preserved permissions and ownership."
+            f"Replaced {dest_path} with {src_path} (preserved metadata)."
         )
+
 
     def install_files(self, package: str) -> None:
         # needed for updates & reinstalls
