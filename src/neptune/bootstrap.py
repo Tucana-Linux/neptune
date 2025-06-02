@@ -67,6 +67,8 @@ def bootstrap() -> None:
     settings = NeptuneSettings(arguments)
     # Neptune settings will pickup the repos from the host as install path hasn't been changed yet 
     settings.parse_repos()
+    settings.parse_config()
+
     system = System(settings)
     frontend = Frontend(system)
     parse_arguments(settings)
