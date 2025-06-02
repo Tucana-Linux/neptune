@@ -97,7 +97,7 @@ class System:
                 self.remove_package(package_name)
                 progress.update(remove_task, advance=1)
                 
-    def move_with_permissions(src_path: str, dest_path: str) -> None:
+    def move_with_permissions(self, src_path: str, dest_path: str) -> None:
         dir_name = os.path.dirname(dest_path)
         base_name = os.path.basename(dest_path)
         temp_path = os.path.join(dir_name, f".{base_name}.tmp")
@@ -109,8 +109,8 @@ class System:
         shutil.copy2(src_path, temp_path, follow_symlinks=False)
 
         if stat_info is not None:
-            os.chmod(temp_path, stat_info.st_mode)
             os.chown(temp_path, stat_info.st_uid, stat_info.st_gid)
+            os.chmod(temp_path, stat_info.st_mode)
         os.replace(temp_path, dest_path)
         os.remove(src_path)
         logging.debug(
@@ -232,7 +232,7 @@ class System:
 
             for package in packages:
                 self.install_package(package, console_line=current_line)
-                status_lines.append(rf" {package} \[[bold blue]✔[/bold blue]]")
+                status_lines.append(rf" {package.name} \[[bold blue]✔[/bold blue]]")
                 progress.update(task, advance=1)
                 live.update(get_status_group())
 
