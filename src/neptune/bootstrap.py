@@ -65,17 +65,17 @@ def bootstrap() -> None:
     host_frontend.sync()
 
     settings = NeptuneSettings(arguments)
-    # Neptune settings will pickup the repos from the host as install path hasn't been changed yet 
+    # Neptune settings will pickup the repos & config from the host as install path hasn't been changed yet 
     settings.parse_repos()
     settings.parse_config()
 
-    system = System(settings)
-    frontend = Frontend(system)
     parse_arguments(settings)
     settings.install_path = path
     settings.run_postinst = False
     settings.cache_dir = f"{path}/var/lib/neptune/cache"
     settings.lib_dir = f"{path}/var/lib/neptune/"
+    system = System(settings)
+    frontend = Frontend(system)
     if not os.listdir(path) == []:
         print("This directory is not empty!")
         sys.exit(1)
