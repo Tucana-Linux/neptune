@@ -17,14 +17,13 @@ if os.geteuid() != 0:
 
 arguments = list(sys.argv)
 arguments.pop(0)
-base_settings = NeptuneSettings(arguments)
-system = System(base_settings)
-frontend = Frontend(system)
-settings = system.settings
+host_settings = NeptuneSettings(arguments)
+host_system = System(host_settings)
+host_frontend = Frontend(host_system)
 path = ""
 
 
-def parse_arguments():
+def parse_arguments(settings : NeptuneSettings):
     valid_cli_arguments = ["--y"]
 
     if len(arguments) == 0:
@@ -52,18 +51,24 @@ def parse_arguments():
             arguments.remove(valid_cli_arguments[arg])
 
 
-def create_initial_files():
+def create_initial_files(settings : NeptuneSettings):
     os.makedirs(settings.cache_dir)
     os.makedirs(f"{settings.lib_dir}/file-lists")
     os.makedirs(f"{settings.cache_dir}/depend")
-    subprocess.run(f"touch {settings.lib_dir}/versions", shell=True)
-    subprocess.run(f"touch {settings.lib_dir}/installed_package", shell=True)
+    subprocess.run(f"touch {settings.lib_dir}/system-packages.yaml", shell=True)
 
 
 def bootstrap():
-    settings.parse_config()
-    settings.parse_repos()
-    parse_arguments()
+    # Sync the host
+    host_frontend.sync()
+    host_settings.parse_config()
+    host_settings.parse_repos()
+    
+    settings = NeptuneSettings(arguments)
+    system = System(settings)
+    frontend = Frontend(system)
+    parse_arguments(settings)
+    
     settings.install_path = path
     settings.run_postinst = False
     settings.cache_dir = f"{path}/var/lib/neptune/cache"
@@ -71,8 +76,9 @@ def bootstrap():
     if not os.listdir(path) == []:
         print("This directory is not empty!")
         sys.exit(1)
-    create_initial_files()
-    # This sync would sync the system about to be bootstrapped which isn't advisable.
+    create_initial_files(settings)
+
+    # Re-init and sync the new system
     frontend.sync()
 
     print("Getting dependencies")

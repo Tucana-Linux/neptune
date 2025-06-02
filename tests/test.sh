@@ -2,6 +2,7 @@
 # TODO Version Normalizer Test
 # TODO Config settings test for loglevels
 # TODO Add permission test
+# TODO Add bootstrap test to make sure that system-packages.yaml is proper
 REPO="http://192.168.1.143:88"
 # DO NOT CHANGE
 TEMP_DIR="$HOME/neptune-tests"
