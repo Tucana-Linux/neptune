@@ -23,7 +23,7 @@ host_frontend = Frontend(host_system)
 path = ""
 
 
-def parse_arguments(settings : NeptuneSettings):
+def parse_arguments(settings : NeptuneSettings) -> None:
     valid_cli_arguments = ["--y"]
 
     if len(arguments) == 0:
@@ -51,24 +51,25 @@ def parse_arguments(settings : NeptuneSettings):
             arguments.remove(valid_cli_arguments[arg])
 
 
-def create_initial_files(settings : NeptuneSettings):
+def create_initial_files(settings : NeptuneSettings) -> None:
     os.makedirs(settings.cache_dir)
     os.makedirs(f"{settings.lib_dir}/file-lists")
     os.makedirs(f"{settings.cache_dir}/depend")
     subprocess.run(f"touch {settings.lib_dir}/system-packages.yaml", shell=True)
 
 
-def bootstrap():
+def bootstrap() -> None:
     # Sync the host
-    host_frontend.sync()
     host_settings.parse_config()
     host_settings.parse_repos()
-    
+    host_frontend.sync()
+
     settings = NeptuneSettings(arguments)
+    # Neptune settings will pickup the repos from the host as install path hasn't been changed yet 
+    settings.parse_repos()
     system = System(settings)
     frontend = Frontend(system)
     parse_arguments(settings)
-    
     settings.install_path = path
     settings.run_postinst = False
     settings.cache_dir = f"{path}/var/lib/neptune/cache"
