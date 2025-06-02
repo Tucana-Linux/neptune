@@ -32,7 +32,7 @@ def run_operation(operation: str, frontend: Frontend):
 
 def main():
     # also initalizes all the functions variables
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
     logging.debug(f"Arguments: {sys.argv}")
     settings = NeptuneSettings(arguments=sys.argv)
     system = System(settings)
