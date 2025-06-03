@@ -146,7 +146,33 @@ class Utils:
                 )
         packages = list(processing_dict.values())
         return packages
-
+    
+    def reverse_remove_depends(
+        self, 
+        packages_to_remove: set[str], 
+        system_packages: dict[str, Package], 
+        processing_set: Optional[set[str]]
+    ) -> set[str]:
+        """
+        Allows non-wanted packages to be removed by calculating what
+        packages depend on them recursively
+        Returns set of packages to remove
+        """
+        if processing_set is None:
+            processing_set = set()
+        depends : set[str] = set() 
+        for package in packages_to_remove:
+            processing_set.add(package)
+            for name, test_package_object in system_packages.items():
+                if package in test_package_object.depends:
+                    depends.add(name)
+        new_depends = depends - processing_set         
+        if new_depends: 
+            self.reverse_remove_depends(new_depends, 
+                                        system_packages=system_packages,
+                                        processing_set=processing_set)
+        return processing_set
+        
     def check_for_updates(self, system_packages: dict[str, Package]) -> list[Package]:
         updates: list[Package] = []
 

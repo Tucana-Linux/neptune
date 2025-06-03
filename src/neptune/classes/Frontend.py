@@ -98,19 +98,27 @@ class Frontend:
             if package_name not in self.system.system_packages.keys():
                 print(f"{package_name} is not installed")
                 sys.exit(1)
-            if not self.system.system_packages[package_name].wanted:
+        # reverse remove depends will include the ones that the user wants 
+        reverse_dependency_packages_to_remove : set[str] = self.system.utils.reverse_remove_depends(
+            package_names_user_wants_removed, 
+            self.system.system_packages
+        )
+        if reverse_dependency_packages_to_remove != package_names_user_wants_removed:
                 print(
-                    f"{package_name} was installed as a dependency of another package, it can not be removed sanely"
+                    "\033[91mWARNING: EXPERIMENTAL Reverse Dependency Resolving Enabled.\n"
+                    "Please read carefully — Neptune is attempting to remove packages that "
+                    "depend on the ones you selected for removal.\n"
+                    "As a result, something you didn't intend to remove may also be removed.\033[0m"
                 )
-                sys.exit(1)
+         
         system_packages_without_the_ones_to_remove = dict(self.system.system_packages)
-        for package_name in package_names_user_wants_removed:
+        for package_name in reverse_dependency_packages_to_remove:
             system_packages_without_the_ones_to_remove.pop(package_name)
         
         absolute_packages_to_remove: list[str] = (
             self.system.utils.recalculate_system_depends(
                 system_packages=system_packages_without_the_ones_to_remove,
-            )[1] + package_names_user_wants_removed
+            )[1] + reverse_dependency_packages_to_remove
         )
 
         if not self.system.settings.yes_mode:

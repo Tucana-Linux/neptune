@@ -615,14 +615,20 @@ function update_test() {
   return 0
 
 }
+
 function remove_test() {
+
+  # Neptune remove is told to remove remote-test and should remove both remove-test-depend and remove-test-ultimate
+
   # Create mock packages to test removal
   make_mock_package "remove-test-depend" "" "" "" "1" "1.0.0"
+  make_mock_package "remove-test-should-not-be-removed" "" "" "" "1" "1.0.0"
   make_mock_package "remove-test" "remove-test-depend" "" "" "1" "1.0.0"
+  make_mock_package "remove-test-ultimate" "remove_test" "" "" "1" "1.0.0"
 
   # Sync the package list and install the mock packages
   chroot $CHROOT /bin/bash -c "neptune sync"
-  chroot $CHROOT /bin/bash -c "neptune install --y remove-test"
+  chroot $CHROOT /bin/bash -c "neptune install --y remove-test-ultimate remove-test-should-not-be-removed"
 
   # Attempt to remove the installed packages
   chroot $CHROOT /bin/bash -c "neptune remove --y remove-test"
@@ -647,8 +653,13 @@ function remove_test() {
     return 1
   fi
 
+  if [ -f "$CHROOT/tests/remove-test-ultimate/remove-test-ultimate" ]; then
+    echo "Test failed: remove-test-ultimate files still present after removal reverse dependency resolution problem"
+    return 1
+  fi
+
   if [ -f "$CHROOT/tests/remove-test-depend/remove-test-depend" ]; then
-    echo "Test failed: remove-test-depend files still present after removal"
+    echo "Test failed: remove-test-depend files still present after removal forward dependency resolution problem"
     return 1
   fi
 
@@ -665,6 +676,11 @@ function remove_test() {
 
   if cat $CHROOT/var/lib/neptune/system-packages.yaml | grep "remove-test-depend"; then
     echo "Test failed: remove-test-depend is still listed in system-packages.yaml after removal"
+    return 1
+  fi
+
+  if cat $CHROOT/var/lib/neptune/system-packages.yaml | grep "remove-test-ultimate"; then
+    echo "Test failed: remove-test-ultimate is still listed in system-packages.yaml after removal"
     return 1
   fi
 
