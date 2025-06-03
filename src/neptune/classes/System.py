@@ -66,9 +66,11 @@ class System:
             .splitlines()
         )
         to_remove += [file for file in files_old if file not in new_file_list]
+        logging.debug(f"{package} removal wants to remove files: {to_remove}")
         for file in to_remove:
             self.check_for_and_delete(file)
             folder_set.add(os.path.dirname(file))
+            
         for folder in folder_set:
             self.try_remove_folder(folder)
         
@@ -84,6 +86,7 @@ class System:
     def remove_package(self, package_name: str) -> None:
         # This does NOT do depend checking. This will remove ANY package given to it even if it required for system operation.
         # Use recalculate_system_depends BEFORE using this package
+        folder_set : set[str] = set()
         try:
             files = set(
                 open(f"{self.settings.lib_dir}/file-lists/{package_name}.list", "r")
@@ -94,9 +97,15 @@ class System:
             print(f"File list for {package_name} not found, skipping removal")
             return
         print(f"Removing {package_name}")
+        
         for file in files:
             # os/subprocesses remove function will crash the system if it's removing something that is currently in use
             self.check_for_and_delete(f"{self.settings.install_path}/{file}")
+            folder_set.add(os.path.dirname(f"{self.settings.install_path}/{file}"))
+            
+        for folder in folder_set:
+            self.try_remove_folder(folder)
+            
         self.system_packages.pop(package_name)
 
     def remove_packages(self, package_names: list[str]):
