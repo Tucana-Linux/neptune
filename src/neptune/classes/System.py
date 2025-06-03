@@ -58,6 +58,7 @@ class System:
 
     def remove_old_files(self, package: str, new_file_list: list[str]) -> None:
         # used for update to remove old stale files
+        folder_set : set[str] = set()
         to_remove: list[str] = []
         files_old = set(
             open(f"{self.settings.lib_dir}/file-lists/{package}.list", "r")
@@ -67,6 +68,16 @@ class System:
         to_remove += [file for file in files_old if file not in new_file_list]
         for file in to_remove:
             self.check_for_and_delete(file)
+            folder_set.add(os.path.dirname(file))
+        for folder in folder_set:
+            self.try_remove_folder(folder)
+        
+    def try_remove_folder(self, folder) -> None:
+            try:
+                os.rmdir(folder)
+                self.try_remove_folder(os.path.dirname(folder))
+            except OSError:
+                pass
 
     def remove_package(self, package_name: str) -> None:
         # This does NOT do depend checking. This will remove ANY package given to it even if it required for system operation.

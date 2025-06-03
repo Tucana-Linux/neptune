@@ -637,6 +637,16 @@ function remove_test() {
     return 1
   fi
 
+  if [ -d "$CHROOT/tests/remove-test/" ]; then
+    echo "Test failed: remove-test directory still present after removal"
+    return 1
+  fi
+
+  if [ ! -d "$CHROOT/tests/" ]; then
+    echo "Test failed: directory cleanup went too far and deleted the main tests directory"
+    return 1
+  fi
+
   if [ -f "$CHROOT/tests/remove-test-depend/remove-test-depend" ]; then
     echo "Test failed: remove-test-depend files still present after removal"
     return 1
