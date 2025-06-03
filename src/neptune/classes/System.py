@@ -74,9 +74,11 @@ class System:
         
     def try_remove_folder(self, folder) -> None:
             try:
+                logging.debug(f"Attempting to remove folder {folder}")
                 os.rmdir(folder)
                 self.try_remove_folder(os.path.dirname(folder))
             except OSError:
+                logging.debug(f"Recursion ended (did not delete) at {folder}")
                 pass
 
     def remove_package(self, package_name: str) -> None:
