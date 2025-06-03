@@ -49,6 +49,19 @@ class Utils:
             except Exception as e:
                 logging.error(f"Error reading from backup file error {e}")
         return backup
+    
+    
+    def try_remove_folder(self, folder) -> None:
+        """
+        Attempt to remove empty folders recursively
+        """
+        try:
+            logging.debug(f"Attempting to remove folder {folder}")
+            os.rmdir(folder)
+            self.try_remove_folder(os.path.dirname(folder))
+        except OSError:
+            logging.debug(f"Recursion ended (did not delete) at {folder}")
+            pass
 
     def generate_file_list(self, package: str) -> list[str]:
         os.chdir(f"{self.settings.cache_dir}/{package}")

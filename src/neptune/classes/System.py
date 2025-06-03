@@ -72,19 +72,8 @@ class System:
             folder_set.add(os.path.dirname(file))
             
         for folder in folder_set:
-            self.try_remove_folder(folder)
+            self.utils.try_remove_folder(folder)
         
-    def try_remove_folder(self, folder) -> None:
-        """
-        Attempt to remove empty folders recursively
-        """
-        try:
-            logging.debug(f"Attempting to remove folder {folder}")
-            os.rmdir(folder)
-            self.try_remove_folder(os.path.dirname(folder))
-        except OSError:
-            logging.debug(f"Recursion ended (did not delete) at {folder}")
-            pass
 
     def remove_package(self, package_name: str) -> None:
         # This does NOT do depend checking. This will remove ANY package given to it even if it required for system operation.
@@ -107,7 +96,7 @@ class System:
             folder_set.add(os.path.dirname(f"{self.settings.install_path}/{file}"))
             
         for folder in folder_set:
-            self.try_remove_folder(folder)
+            self.utils.try_remove_folder(folder)
             
         self.system_packages.pop(package_name)
 

@@ -29,7 +29,6 @@ def run_operation(operation: str, frontend: Frontend):
                 "Neptune Bug, could not find operation even though it's valid"
             )
 
-
 def main():
     # also initalizes all the functions variables
     logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
