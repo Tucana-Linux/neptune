@@ -75,13 +75,16 @@ class System:
             self.try_remove_folder(folder)
         
     def try_remove_folder(self, folder) -> None:
-            try:
-                logging.debug(f"Attempting to remove folder {folder}")
-                os.rmdir(folder)
-                self.try_remove_folder(os.path.dirname(folder))
-            except OSError:
-                logging.debug(f"Recursion ended (did not delete) at {folder}")
-                pass
+        """
+        Attempt to remove empty folders recursively
+        """
+        try:
+            logging.debug(f"Attempting to remove folder {folder}")
+            os.rmdir(folder)
+            self.try_remove_folder(os.path.dirname(folder))
+        except OSError:
+            logging.debug(f"Recursion ended (did not delete) at {folder}")
+            pass
 
     def remove_package(self, package_name: str) -> None:
         # This does NOT do depend checking. This will remove ANY package given to it even if it required for system operation.
