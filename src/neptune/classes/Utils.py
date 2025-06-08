@@ -151,10 +151,10 @@ class Utils:
         self, 
         packages_to_remove: set[str], 
         system_packages: dict[str, Package], 
-        processing_set: Optional[set[str]]
+        processing_set: Optional[set[str]] = None
     ) -> set[str]:
         """
-        Allows non-wanted packages to be removed by calculating what
+        Alloes non-wanted packages to be removed by calculating what
         packages depend on them recursively
         Returns set of packages to remove
         """
