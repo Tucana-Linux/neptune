@@ -51,7 +51,7 @@ class Utils:
         return backup
     
     
-    def try_remove_folder(self, folder) -> None:
+    def try_remove_folder(self, folder: str) -> None:
         """
         Attempt to remove empty folders recursively
         """
@@ -164,7 +164,7 @@ class Utils:
         for package in packages_to_remove:
             processing_set.add(package)
             for name, test_package_object in system_packages.items():
-                if package in test_package_object.depends:
+                if package in (test_package_object.depends or []):
                     depends.add(name)
         new_depends = depends - processing_set         
         if new_depends: 
