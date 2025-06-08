@@ -12,6 +12,7 @@ class Package:
     # Last update on the repo side not the system side
     last_update: int
     depends: Optional[list[str]] = field(default_factory=list[str])
+    make_depends: Optional[list[str]] = field(default_factory=list[str])
     wanted: Optional[bool] = False
 
     # make it hashable but allow modification
