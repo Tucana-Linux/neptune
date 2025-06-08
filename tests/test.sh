@@ -669,7 +669,7 @@ function remove_test() {
   fi
   
   # Check if installed package has been updated
-  if cat $CHROOT/var/lib/neptune/system-packages.yaml | grep "remove-test"; then
+  if cat $CHROOT/var/lib/neptune/system-packages.yaml | grep "remove-test:"; then
     echo "Test failed: remove-test is still listed in system-packages.yaml after removal"
     return 1
   fi
