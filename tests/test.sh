@@ -623,7 +623,7 @@ function remove_test() {
   make_mock_package "remove-test-depend" "" "" "" "1" "1.0.0"
   make_mock_package "remove-test-should-not-be-removed" "" "" "" "1" "1.0.0"
   make_mock_package "remove-test" "remove-test-depend" "" "" "1" "1.0.0"
-  make_mock_package "remove-test-ultimate" "remove_test" "" "" "1" "1.0.0"
+  make_mock_package "remove-test-ultimate" "remove-test" "" "" "1" "1.0.0"
 
   # Sync the package list and install the mock packages
   chroot $CHROOT /bin/bash -c "neptune sync"
@@ -633,6 +633,7 @@ function remove_test() {
   chroot $CHROOT /bin/bash -c "neptune remove --y remove-test"
   if [[ $? != 0 ]]; then
     echo "Test failed: neptune remove ended with a non-zero status code"
+    return 1
   fi
 
 
