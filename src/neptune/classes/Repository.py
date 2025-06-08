@@ -30,7 +30,7 @@ class Repository:
                 f"{self.settings.cache_dir}/repos/{self.name}/packages.yaml", "r"
             ) as f:
                 try:
-                    raw_data = yaml.safe_load(f)
+                    raw_data = yaml.load(f, Loader=yaml.CSafeLoader)
                     self.packages = {
                         package_name: Package(
                             **metadata, repo=self.name, name=package_name
