@@ -99,10 +99,10 @@ class Frontend:
                 print(f"{package_name} is not installed")
                 sys.exit(1)
         # reverse remove depends will include the ones that the user wants 
-        reverse_dependency_packages_to_remove : set[str] = self.system.utils.reverse_remove_depends(
-            package_names_user_wants_removed, 
+        reverse_dependency_packages_to_remove : list[str] = list(self.system.utils.reverse_remove_depends(
+            set(package_names_user_wants_removed), 
             self.system.system_packages
-        )
+        ))
         if reverse_dependency_packages_to_remove != package_names_user_wants_removed:
                 print(
                     "\033[91mWARNING: EXPERIMENTAL Reverse Dependency Resolving Enabled.\n"
