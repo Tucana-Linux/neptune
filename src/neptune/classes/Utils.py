@@ -74,19 +74,25 @@ class Utils:
         os.chdir(self.settings.cache_dir)
         return files
 
-    def find_repo_with_best_version(self, package: str) -> Repository | None:
+    def find_repo_with_best_version(self, package: str) -> Repository:
         latest_ver = Version("0")
         # by the fact that check_package_exists will always be run before this, there will **should** always be a best repo
         best_repo = None
         for _, repo in self.settings.repositories.items():
             if not repo.check_if_package_exists(package):
-                return None
+                continue
             version = Version(
                 self.version_normalizer(repo.get_package(package).version)
             )
             if version > latest_ver:
                 latest_ver = version
                 best_repo = repo
+        # just in case
+        if best_repo is None:
+            logging.critical(
+                f"Could not find a good repo for {package} even though it exists, THIS IS A BUG, please report to https://github.com/Tucana-Linux/issues"
+            )
+            sys.exit(1)
         return best_repo
 
     # TODO Fix bug here #13
