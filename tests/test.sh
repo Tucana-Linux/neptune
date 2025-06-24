@@ -3,6 +3,7 @@
 # TODO Config settings test for loglevels
 # TODO Add permission test
 # TODO Add bootstrap test to make sure that system-packages.yaml is proper
+# TODO add test where package is removed from the repo in update test
 REPO="https://repo.tucanalinux.org/development/mercury"
 # DO NOT CHANGE
 TEMP_DIR="$HOME/neptune-tests"
@@ -108,6 +109,22 @@ EOF
   cd $REPO2_DIR
   screen -dmS repo2 python3 -m http.server 98
   cd $GIT_LOCATION
+}
+
+function remove_mock_package() {
+  local pkgname="$1"
+  local repo="$2"
+  # Just removing it from packages.yaml is enough
+  if [[ $repo == "1" ]]; then
+    yq "del(.$pkgname)" $REPO_DIR/available-packages/packages.yaml
+    return
+  elif [[ $repo == "2" ]]; then
+    yq "del(.$pkgname)" $REPO2_DIR/available-packages/packages.yaml
+  else
+    echo "Failed to remove package this is a bug in the tests"
+    exit 1
+  fi
+
 }
 
 function make_mock_package() {
@@ -608,6 +625,9 @@ function update_test() {
     echo "The system-packages.yaml version was not updated or is otherwise broken, wanted was reset to false"
     return 1
   fi
+
+  # Another part of the test, remove a package that is already on the system from the repo
+  remove_mock_package "update-test-root" "1"
 
   echo "Update test passed"
 

@@ -90,9 +90,9 @@ class Utils:
         # just in case
         if best_repo is None:
             logging.critical(
-                f"Could not find a good repo for {package} even though it exists, THIS IS A BUG, please report to https://github.com/Tucana-Linux/issues"
+                f"Could not find a good repo for {package}, THIS IS A BUG, please report to https://github.com/Tucana-Linux/issues"
             )
-            sys.exit(1)
+            raise FileNotFoundError
         return best_repo
 
     # TODO Fix bug here #13
@@ -211,7 +211,7 @@ class Utils:
         # check to see if anything currently installed is no longer avaliable
         remove.extend(self.check_if_packages_exist_return_packages(system_packages))
         wanted_package_names: set[str] = {
-            package.name for package in system_packages.values() if package.wanted
+            package.name for package in system_packages.values() if package.wanted and package not in remove
         }
         logging.debug(
             f"Recalculating system dependencies, Current wanted packages: {wanted_package_names} "
