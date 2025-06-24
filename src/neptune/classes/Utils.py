@@ -1,11 +1,10 @@
 import logging
 import os
 from pathlib import Path
-import re
 import sys
 from typing import Optional
 
-from packaging.version import Version
+from packaging.version import parse
 from neptune.classes.Package import Package
 from neptune.classes.Repository import Repository
 from neptune.classes.NeptuneSettings import NeptuneSettings
@@ -21,20 +20,6 @@ class Utils:
 
     def __init__(self, settings: NeptuneSettings):
         self.settings = settings
-
-    def version_normalizer(self, version: str) -> str:
-        # version = re.sub(r"^[^\d]+", "", version)
-        # version = re.sub(r"[a-zA-Z]", ".", version)
-        # version = re.sub(r"[a-zA-Z]", "", version)
-        # Replace underscores and hyphens with dots
-        # version = version.replace("_", ".").replace("-", ".")
-        # 1. Remove leading non-digit characters
-        version = re.sub(r"^[^\d]+", "", version)
-        # 2. Replace underscores and hyphens with dots
-        version = re.sub(r"[_-]", ".", version)
-        # 3. Remove any remaining letters
-        version = re.sub(r"[a-zA-Z]", "", version)
-        return version
 
     def parse_backup_file(self, package: str) -> list[str]:
         backup = []
@@ -75,15 +60,13 @@ class Utils:
         return files
 
     def find_repo_with_best_version(self, package: str) -> Repository:
-        latest_ver = Version("0")
+        latest_ver = parse("0")
         # by the fact that check_package_exists will always be run before this, there will **should** always be a best repo
         best_repo = None
         for _, repo in self.settings.repositories.items():
             if not repo.check_if_package_exists(package):
                 continue
-            version = Version(
-                self.version_normalizer(repo.get_package(package).version)
-            )
+            version = parse(repo.get_package(package).version)
             if version > latest_ver:
                 latest_ver = version
                 best_repo = repo
@@ -186,9 +169,7 @@ class Utils:
                 f"Best version for {package} is {best_package.version} from {best_repo.name}"
             )
             logging.debug(f"Current version of {package.name} is {package.version}")
-            if Version(self.version_normalizer(best_package.version)) > Version(
-                self.version_normalizer(package.version)
-            ):
+            if parse(best_package.version) > parse(package.version):
                 updates.append(best_package)
 
         return updates

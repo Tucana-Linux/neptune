@@ -577,6 +577,16 @@ function update_test() {
     return 1
   fi
   echo "Package installed"
+
+  # make the update-test-root file a directory to see if it can replace it properly
+  rm $CHROOT/tests/update-test-root/update-test-root
+  if [[ $? != 0 ]]; then
+    echo "test error could not remove update-test-root file"
+    return 1
+  fi
+
+  mkdir -p $CHROOT/tests/update-test-root/update-test-root
+
   # We don't need to retest whether the depend was installed or not because that should've already been tested
   # sleep so that it has a new date
   sleep 4
@@ -590,6 +600,12 @@ function update_test() {
     echo "Test failed: neptune update exited with non-zero code"
     return 1
   fi
+
+  if [[ -d $CHROOT/tests/update-test-root/update-test-root ]]; then
+    echo "Test failed, did not replace directory with file"
+    return 1
+  fi
+
   CONFIG_HASH_2=$(sha256sum $CHROOT/tests/update-test-root/config.yaml)
   FILE_HASH_2=$(sha256sum $CHROOT/tests/update-test-root/update-test-root)
   
@@ -628,6 +644,16 @@ function update_test() {
 
   # Another part of the test, remove a package that is already on the system from the repo
   remove_mock_package "update-test-root" "1"
+  chroot $CHROOT /bin/bash -c "neptune sync"
+  chroot $CHROOT /bin/bash -c "neptune update --y"
+  if [[ $? != 0 ]]; then
+    echo "Test failed, could not update when a wanted/dependent package was removed from the repo"
+    return 1
+  fi
+  if [ -f $CHROOT/tests/update-test-root/update-test-root ]; then
+    echo "Test failed, update-test-root was not removed despite not existing in the repo"
+    return 1
+  fi
 
   echo "Update test passed"
 
