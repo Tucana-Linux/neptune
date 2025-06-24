@@ -125,6 +125,8 @@ class System:
         if stat_info is not None:
             os.chown(temp_path, stat_info.st_uid, stat_info.st_gid)
             os.chmod(temp_path, stat_info.st_mode)
+        if os.path.exists(dest_path) and (os.path.isdir(src_path) != os.path.isdir(dest_path)):
+            shutil.rmtree(dest_path)
         os.replace(temp_path, dest_path)
         os.remove(src_path)
         logging.debug(
