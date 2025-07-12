@@ -192,7 +192,7 @@ class Utils:
         # check to see if anything currently installed is no longer avaliable
         remove.extend(self.check_if_packages_exist_return_packages(system_packages))
         wanted_package_names: set[str] = {
-            package.name for package in system_packages.values() if package.wanted and package not in remove
+            package.name for package in system_packages.values() if package.wanted and package.name not in remove
         }
         logging.debug(
             f"Recalculating system dependencies, Current wanted packages: {wanted_package_names} "

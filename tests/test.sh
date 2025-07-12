@@ -584,10 +584,12 @@ function update_test() {
     echo "test error could not remove update-test-root file"
     return 1
   fi
-
+  # TODO Fix sha256sum replacement thing to work with this replacement 
+  # folder thing or do the test again for folder replacement
   mkdir -p $CHROOT/tests/update-test-root/update-test-root
 
-  # We don't need to retest whether the depend was installed or not because that should've already been tested
+  # We don't need to retest whether the depend was installed or not 
+  # because that should've already been tested
   # sleep so that it has a new date
   sleep 4
   make_mock_package "update-test-root" "libupdatenew" "" "1" "1" "1.0.1"
