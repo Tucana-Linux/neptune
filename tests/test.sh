@@ -116,10 +116,10 @@ function remove_mock_package() {
   local repo="$2"
   # Just removing it from packages.yaml is enough
   if [[ $repo == "1" ]]; then
-    yq "del(.$pkgname)" $REPO_DIR/available-packages/packages.yaml
+    yq -i "del(.$pkgname)" $REPO_DIR/available-packages/packages.yaml
     return
   elif [[ $repo == "2" ]]; then
-    yq "del(.$pkgname)" $REPO2_DIR/available-packages/packages.yaml
+    yq -i "del(.$pkgname)" $REPO2_DIR/available-packages/packages.yaml
   else
     echo "Failed to remove package this is a bug in the tests"
     exit 1
