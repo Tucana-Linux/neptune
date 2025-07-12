@@ -54,7 +54,7 @@ class System:
 
     def check_for_and_delete(self, path_to_delete: str) -> None:
         # in case more logic is needed later
-        subprocess.run(f"rm -f {path_to_delete}", shell=True)
+        subprocess.run(["rm", "-f", path_to_delete])
 
     def remove_old_files(self, package: str, new_file_list: list[str]) -> None:
         # used for update to remove old stale files
@@ -192,7 +192,7 @@ class System:
         )
 
         console_line.update(f"{package.name} Extracting...")
-        subprocess.run(f"tar -xpf {package.name}.tar.xz", shell=True)
+        subprocess.run(["tar", "-xpf", f"{package.name}.tar.xz"])
 
         logging.info(f"Generating File List for {package.name}")
 
@@ -209,7 +209,7 @@ class System:
         if os.path.exists(f"{package.name}/postinst"):
             self.postinstalls.append(package.name)
             subprocess.run(
-                f"cp {package.name}/postinst /tmp/{package.name}-postinst", shell=True
+                ["cp", f"{package.name}/postinst", f"/tmp/{package.name}-postinst"]
             )
 
         self.install_files(package.name)
@@ -219,8 +219,8 @@ class System:
             
         self.system_packages[package.name] = package
 
-        subprocess.run(f"rm -rf {package.name}", shell=True)
-        subprocess.run(f"rm -f {package.name}.tar.xz", shell=True)
+        subprocess.run(["rm", "-rf", package.name])
+        subprocess.run(["rm", "-f", f"{package.name}.tar.xz"])
 
     def install_packages(self, packages: set[Package]):
         # This does NOT run get depends before, in order to
