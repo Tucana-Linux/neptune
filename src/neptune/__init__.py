@@ -24,6 +24,8 @@ def run_operation(operation: str, frontend: Frontend):
             frontend.remove()
         case "sync":
             frontend.sync()
+        case "build-order":
+            frontend.build_order()
         case _:
             logging.critical(
                 "Neptune Bug, could not find operation even though it's valid"

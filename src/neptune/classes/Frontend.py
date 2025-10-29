@@ -135,3 +135,9 @@ class Frontend:
     def sync(self):
         for _, repo in self.system.settings.repositories.items():
             repo.sync()
+    def build_order(self):
+        if not len(self.system.settings.arguments) > 0:
+            print('Usage: neptune build-order {{PACKAGES}}')
+            sys.exit(1)
+        self.system.utils.get_build_order(self.system.settings.arguments)
+    
