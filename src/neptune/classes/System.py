@@ -78,7 +78,11 @@ class System:
     def remove_package(self, package_name: str) -> None:
         # This does NOT do depend checking. This will remove ANY package given to it even if it required for system operation.
         # Use recalculate_system_depends BEFORE using this package
-        # Note: This can't remove empty folders... make an issue if that behavior is needed
+        # Note: This can't remove empty folders initially installed with a package... 
+        # make an issue if that behavior is needed
+        if package_name not in self.system_packages:
+            logging.warning("A non installed package was passed to remove_package, this is a BUG please report")
+            return
         folder_set : set[str] = set()
         try:
             files = set(
@@ -152,7 +156,13 @@ class System:
                 if os.path.islink(src_path):
                     self.move_with_permissions(src_path, dest_path)
                 else:
-                    os.makedirs(dest_path, exist_ok=True)
+                    try:
+                        os.makedirs(dest_path, exist_ok=True)
+                    except FileExistsError:
+                        # TODO add config option
+                        logging.warning("This was user modified to be a file instead of a directory, removing it per config setting...")
+                        os.remove(dest_path)
+                        os.makedirs(dest_path, exist_ok=True)
             for file in files:
                 src_path = os.path.join(root, file)
                 abs_path = os.path.join(root, file)

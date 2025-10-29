@@ -70,11 +70,12 @@ class Frontend:
         install = recalculated_depends[0]
         remove = recalculated_depends[1]
 
-        if len(updates) == 0:
+        if len(updates) == 0 and len(install+remove) == 0:
             print("No updates found, try to sync")
             sys.exit(0)
         if not self.system.settings.yes_mode:
-            print(f"Packages to be updated: {" ".join([pkg.name for pkg in updates])}")
+            if len(updates) > 0:
+                print(f"Packages to be updated: {" ".join([pkg.name for pkg in updates])}")
             if len(install) > 0:
                 print(
                     f'Packages to be installed: {" ".join([pkg.name for pkg in install])}'

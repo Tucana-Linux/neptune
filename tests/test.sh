@@ -582,7 +582,7 @@ function update_test() {
   fi
   echo "Package installed"
 
-  # make the update-test-root file a directory to see if it can replace it properly
+  # make the update-test-root-dir directory to a file to see if it can replace it properly
   rm -r $CHROOT/tests/update-test-root/update-test-root-dir
   if [[ $? != 0 ]]; then
     echo "test error could not remove update-test-root directory for testing"
