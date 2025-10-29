@@ -779,6 +779,10 @@ EOF
   
 }
 
+function build_order_test() {
+  return 1
+}
+
 function run_test() {
   local test_function=$1
   local test_name=$2
@@ -806,6 +810,7 @@ function run_tests() {
   run_test update_test "Neptune Update"
   run_test multi_repo_test "Neptune Multi-Repo Support"
   run_test bootstrap_test "Neptune Bootstrap Test"
+  run_test build_order_test "Neptune Build Ordering Test"
   echo "All Tests Passed"
 }
 run_tests
