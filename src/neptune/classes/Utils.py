@@ -18,7 +18,7 @@ class Utils:
     it just needs settings to be set properly.
     """
 
-    def __init__(self, settings: NeptuneSettings):
+    def __init__(self, settings: NeptuneSettings) -> None:
         self.settings = settings
 
     def parse_backup_file(self, package: str) -> list[str]:
@@ -137,7 +137,7 @@ class Utils:
         processing_set: Optional[set[str]] = None
     ) -> set[str]:
         """
-        Alloes non-wanted packages to be removed by calculating what
+        Allows non-wanted packages to be removed by calculating what
         packages depend on them recursively
         Returns set of packages to remove
         """
@@ -216,3 +216,31 @@ class Utils:
         logging.debug(f"Recalculator says to remove {remove}")
         logging.debug(f"Recalculator says to install {install}")
         return (install, remove)
+
+    
+    # TODO Add Test <rahul@chandra.net>
+    def get_build_order(self, package_names: list[str]) -> list[str]:
+        seen : set[str] = set()
+        packages_buffer : list[str] =  []
+        
+        def add_build_order(package_name: str) -> None:
+            if package_name in seen:
+                logging.debug(f"Skipping {package_name} because we already found it")
+                return
+            seen.add(package_name)
+            package_obj = self.find_repo_with_best_version(package_name).get_package(package_name)
+            build_depends : list[str] = package_obj.depends or []
+            make_depends : list[str] = package_obj.make_depends or []
+            build_depends.extend(make_depends)
+            for depend in build_depends:
+                add_build_order(depend)
+                
+            packages_buffer.append(package_name)
+        
+        for package_name in package_names:
+            add_build_order(package_name)
+        requested_packages = set(package_names)
+        return [package_name for package_name in packages_buffer if package_name in requested_packages]
+        
+            
+        
