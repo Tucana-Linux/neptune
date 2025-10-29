@@ -8,7 +8,7 @@ REPO="https://repo.tucanalinux.org/development/mercury"
 # DO NOT CHANGE
 TEMP_DIR="$HOME/neptune-tests"
 LOG_DIR="$TEMP_DIR/logs"
-GIT_LOCATION="/home/rahul/Git-Clones/neptune-0.1.3/"
+GIT_LOCATION="/home/rahul/Git-Clones/neptune/"
 REPO_DIR="$TEMP_DIR/repo"
 REPO2_DIR="$TEMP_DIR/repo2"
 CHROOT="$TEMP_DIR/chroot"
@@ -142,6 +142,8 @@ function make_mock_package() {
   echo "$pkgname $date" > "$pkgname"/tests/"$pkgname"/"$pkgname"
   # symlink for testing
   ln -sfv /tests/"$pkgname"/"$pkgname" "$pkgname"/tests/"$pkgname"/"$pkgname"-sym
+  # directory for testing
+  mkdir -p "$pkgname"/tests/"$pkgname"/"$pkgname"-dir
 
   if [[ $repo != "1" && $repo != "2" ]]; then
     echo "TEST ERROR, REPO not defined for package $pkgname"
@@ -579,14 +581,12 @@ function update_test() {
   echo "Package installed"
 
   # make the update-test-root file a directory to see if it can replace it properly
-  rm $CHROOT/tests/update-test-root/update-test-root
+  rm -r $CHROOT/tests/update-test-root/update-test-root-dir
   if [[ $? != 0 ]]; then
-    echo "test error could not remove update-test-root file"
+    echo "test error could not remove update-test-root directory for testing"
     return 1
   fi
-  # TODO Fix sha256sum replacement thing to work with this replacement 
-  # folder thing or do the test again for folder replacement
-  mkdir -p $CHROOT/tests/update-test-root/update-test-root
+  touch $CHROOT/tests/update-test-root/update-test-root-dir
 
   # We don't need to retest whether the depend was installed or not 
   # because that should've already been tested
@@ -603,8 +603,8 @@ function update_test() {
     return 1
   fi
 
-  if [[ -d $CHROOT/tests/update-test-root/update-test-root ]]; then
-    echo "Test failed, did not replace directory with file"
+  if [[ -f $CHROOT/tests/update-test-root/update-test-root-dir ]]; then
+    echo "Test failed, did not replace file with directory"
     return 1
   fi
 
@@ -735,6 +735,8 @@ function remove_test() {
   echo "remove_test passed successfully"
   return 0
 }
+
+
 
 function bootstrap_test() {
   # Reset back to tucanalinux.org
