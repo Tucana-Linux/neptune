@@ -78,6 +78,7 @@ class System:
     def remove_package(self, package_name: str) -> None:
         # This does NOT do depend checking. This will remove ANY package given to it even if it required for system operation.
         # Use recalculate_system_depends BEFORE using this package
+        # Note: This can't remove empty folders... make an issue if that behavior is needed
         folder_set : set[str] = set()
         try:
             files = set(

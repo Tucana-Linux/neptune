@@ -144,6 +144,8 @@ function make_mock_package() {
   ln -sfv /tests/"$pkgname"/"$pkgname" "$pkgname"/tests/"$pkgname"/"$pkgname"-sym
   # directory for testing
   mkdir -p "$pkgname"/tests/"$pkgname"/"$pkgname"-dir
+  touch "$pkgname"/tests/"$pkgname"/"$pkgname"-dir/file
+
 
   if [[ $repo != "1" && $repo != "2" ]]; then
     echo "TEST ERROR, REPO not defined for package $pkgname"
